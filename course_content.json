@@ -1,0 +1,20 @@
+{
+    "title": "Introduction to JavaScript",
+    "content_type": "video",
+    "description": "This video introduces the basics of JavaScript.",
+    "content": {
+      "video_url": "https://example.com/video/intro-to-js.mp4",
+      "duration": 30,
+      "size": "50MB"
+    },
+    "related_resources": [
+      {
+        "title": "JavaScript Documentation",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+      },
+      {
+        "title": "Interactive JS Tutorial",
+        "url": "https://example.com/js-tutorial"
+      }
+    ]
+  }

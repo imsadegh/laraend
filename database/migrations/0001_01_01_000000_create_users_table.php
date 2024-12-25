@@ -12,14 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('username');
+            $table->id(); // Primary Key
+            $table->string('first_name'); // New field
+            $table->string('last_name'); // New field
+            $table->string('username')->unique(); // Ensure username is unique
             $table->string('email')->unique();
-            $table->string('role')->default('Student');
+            $table->string('phone_number')->nullable(); // New field
+            $table->string('role')->default('Student'); // Default role
+            $table->enum('sex', ['male', 'female', 'other'])->nullable(); // New field
+            $table->string('address')->nullable(); // New field
+            $table->string('city')->nullable(); // New field
+            $table->string('zip_code')->nullable(); // New field
+            $table->string('profile_pic')->nullable(); // New field for profile picture
+            $table->boolean('suspended')->default(false); // New field for user status
+            $table->boolean('deleted')->default(false); // New field for soft deletion
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
-            $table->timestamps();
+            $table->timestamps(); // created_at and updated_at
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -37,6 +47,7 @@ return new class extends Migration
             $table->integer('last_activity')->index();
         });
     }
+
 
     /**
      * Reverse the migrations.
