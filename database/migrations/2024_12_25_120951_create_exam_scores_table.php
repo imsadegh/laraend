@@ -13,30 +13,57 @@ return new class extends Migration
     {
         Schema::create('exam_scores', function (Blueprint $table) {
             $table->id(); // Primary Key
-            $table->foreignId('exam_id')->constrained('exams')->onDelete('cascade'); // FK to Exams table
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // FK to Users table
-            $table->float('score')->nullable(); // Score achieved by the student
-            $table->boolean('is_passed')->default(false); // Whether the student passed the exam
-            $table->json('score_details')->nullable(); // JSON for storing score breakdown (e.g., section-wise scores)
-            $table->timestamp('submitted_at')->nullable(); // When the exam was submitted
-            $table->boolean('is_finalized')->default(false); // Whether the score is finalized
-            $table->timestamps(); // created_at and updated_at
 
-            // Additional Considerations
+            // Links to 'exams' and 'users'
+            $table->foreignId('exam_id')
+                  ->constrained('exams')
+                  ->cascadeOnDelete();
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
 
-            $table->timestamp('last_reviewed_at')->nullable(); // Timestamp of when the score was last reviewed
-            $table->foreignId('reviewed_by')->nullable()->constrained('users')->onDelete('set null'); // FK to Users table for reviewer (teacher/assistant)
-            $table->boolean('is_graded_automatically')->default(false); // Whether the exam was graded automatically
-            $table->json('grading_feedback')->nullable(); // Feedback provided by the reviewer
-            $table->decimal('final_grade', 5, 2)->nullable(); // Final grade after re-evaluation or modifications
-            $table->boolean('is_reexam') ->default(false); // Indicates whether the score is for a re-exam attempt
+            // Core scoring fields
+            $table->decimal('score', 5, 2)->nullable()
+                  ->comment('Raw or initial score earned');
+            $table->boolean('is_passed')->default(false);
+            $table->boolean('is_finalized')->default(false)
+                  ->comment('Whether the score is finalized');
+            $table->boolean('is_graded_automatically')->default(false)
+                  ->comment('True if system-graded, false if manually graded');
+            $table->decimal('final_grade', 5, 2)->nullable()
+                  ->comment('Final adjusted grade after reviews or re-checks');
+
+            // Timestamps for exam submission, reviewing, etc.
+            $table->timestamp('submitted_at')->nullable();
+            $table->timestamp('last_reviewed_at')->nullable();
+
+            // Grading feedback, details, re-exam flag
+            $table->json('score_details')->nullable()
+                  ->comment('Breakdown of partial scores, question by question if needed');
+            $table->json('grading_feedback')->nullable()
+                  ->comment('Teacher or system feedback on performance');
+            $table->boolean('is_reexam')->default(false)
+                  ->comment('Indicates if this record is for a re-exam attempt');
+
+            // Reviewer reference (teacher or assistant)
+            $table->foreignId('reviewed_by')
+                  ->nullable()
+                  ->constrained('users')
+                  ->nullOnDelete()
+                  ->comment('User ID of the person who reviewed/graded the exam');
+
+            // Standard timestamps
+            $table->timestamps();
+
+            // Optional soft deletes (uncomment if you want logical deletion)
+            $table->softDeletes();
 
             // Indexes for optimized querying
-            $table->index('exam_id'); // Index for faster querying by exam
-            $table->index('user_id'); // Index for filtering by user
-            $table->index('is_passed'); // Index for quickly filtering passed students
-            $table->index('is_graded_automatically'); // Index for filtering automatic grading exams
-            $table->index('is_reexam'); // Index for filtering re-exam scores
+            $table->index('exam_id');
+            $table->index('user_id');
+            $table->index('is_passed');
+            $table->index('is_graded_automatically');
+            $table->index('is_reexam');
         });
     }
 

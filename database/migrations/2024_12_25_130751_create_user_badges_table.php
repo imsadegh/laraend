@@ -13,21 +13,45 @@ return new class extends Migration
     {
         Schema::create('user_badges', function (Blueprint $table) {
             $table->id(); // Primary Key
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // FK to Users table
-            $table->foreignId('badge_id')->constrained('badges')->onDelete('cascade'); // FK to Badges table
-            $table->timestamp('awarded_at')->useCurrent(); // Timestamp of when the badge was awarded
-            $table->timestamp('expires_at')->nullable(); // Expiration date for badges (if applicable)
-            $table->integer('level')->default(1); // Level associated with the badge (useful for progressive badges)
-            $table->json('metadata')->nullable(); // Additional metadata for flexibility (e.g., custom data, achievement criteria)
-            $table->boolean('is_approved')->default(true); // Whether the badge is manually approved (can be false for automated badges)
-            $table->timestamps(); // created_at and updated_at
 
-            // Indexes for optimized querying
-            $table->index('user_id'); // Index for faster querying by user
-            $table->index('badge_id'); // Index for faster querying by badge
-            $table->index('awarded_at'); // Index for querying by awarded date
-            $table->index('expires_at'); // Index for filtering by expiration date
-            $table->index('is_approved'); // Index for filtering by approval status
+            // Foreign keys linking user -> badge
+            $table->foreignId('user_id')
+                    ->constrained('users')
+                    ->cascadeOnDelete();
+            $table->foreignId('badge_id')
+                    ->constrained('badges')
+                    ->cascadeOnDelete();
+
+            // Track when this badge was awarded
+            $table->timestamp('awarded_at')->useCurrent()
+                    ->comment('Timestamp of when the badge was awarded');
+            $table->timestamp('expires_at')->nullable()
+                    ->comment('Expiration date/time for badges that aren’t permanent');
+
+            // Level & metadata
+            $table->integer('level')->default(1)
+                    ->comment('Level assigned to this badge for the user (if badges can be leveled up)');
+            $table->json('metadata')->nullable()
+                    ->comment('Additional data or context about this specific badge award');
+
+            // Approval & verification
+            $table->boolean('is_approved')->default(true)
+                    ->comment('Whether the badge was manually approved or auto-assigned');
+
+            // Timestamps for record
+            $table->timestamps();
+
+            $table->unique(['user_id', 'badge_id']);
+
+            // Optional soft deletes if you want to logically remove badge awards instead of permanent removal
+            $table->softDeletes();
+
+            // Indexes for quicker lookups
+            $table->index('user_id');
+            $table->index('badge_id');
+            $table->index('awarded_at');
+            $table->index('expires_at');
+            $table->index('is_approved');
         });
     }
 

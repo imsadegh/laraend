@@ -13,22 +13,33 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id(); // Primary Key
+
+            $table->foreignId('role_id')
+                  ->nullable()   // If you want to allow users with no specific role
+                  ->constrained('roles')
+                  ->nullOnDelete();
+
             $table->string('first_name'); // New field
             $table->string('last_name'); // New field
-            $table->string('username')->unique(); // Ensure username is unique
-            $table->string('email')->unique();
-            $table->string('phone_number')->nullable(); // New field
-            $table->string('role')->default('Student'); // Default role
+            $table->string('username')->nullable()->unique(); // Ensure username is unique
+            $table->string('email')->nullable()->unique();
+            $table->string('phone_number')->unique(); // New field
+            // $table->string('role')->default('Student'); // Default role
             $table->enum('sex', ['male', 'female', 'other'])->nullable(); // New field
             $table->string('address')->nullable(); // New field
             $table->string('city')->nullable(); // New field
             $table->string('zip_code')->nullable(); // New field
-            $table->string('profile_pic')->nullable(); // New field for profile picture
+            $table->string('profile_pic_url')->nullable(); // New field for profile picture
+
             $table->boolean('suspended')->default(false); // New field for user status
-            $table->boolean('deleted')->default(false); // New field for soft deletion
             $table->timestamp('email_verified_at')->nullable();
+
             $table->string('password');
             $table->rememberToken();
+
+            // Soft deletes in Laravel (replaces boolean `deleted`)
+            $table->softDeletes(); // creates 'deleted_at' column
+
             $table->timestamps(); // created_at and updated_at
         });
 

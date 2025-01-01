@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->id(); // Primary Key
             $table->string('name'); // Category name
-            $table->foreignId('parent_category_id')->nullable()->constrained('categories')->onDelete('cascade');
-            // Self-referential Foreign Key for subcategories (nullable for top-level categories)
+
+            // Self-referential foreign key for subcategories (nullable for top-level categories)
+            $table->foreignId('parent_category_id')->nullable()->constrained('categories')->nullOnDelete();
+
             $table->timestamps(); // created_at and updated_at
         });
     }

@@ -13,27 +13,51 @@ return new class extends Migration
     {
         Schema::create('course_watch_time', function (Blueprint $table) {
             $table->id(); // Primary Key
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // FK to Users table
-            $table->foreignId('course_id')->constrained('courses')->onDelete('cascade'); // FK to Courses table
-            $table->integer('watch_time_minutes')->default(0); // Total watch time in minutes
-            $table->timestamp('last_watched_at')->nullable(); // Last time the student watched the course
-            $table->timestamps(); // created_at and updated_at
 
-            // Additional Considerations
-            $table->enum('completion_status', ['in_progress', 'completed'])->default('in_progress'); // Completion status
-            $table->string('device_type')->nullable(); // Type of device used (e.g., mobile, desktop)
-            $table->string('platform')->nullable(); // Platform used (e.g., Web, iOS, Android)
-            $table->json('metadata')->nullable(); // Extra metadata (e.g., course-specific data, chapter details)
-            $table->boolean('is_complete')->default(false); // Whether the student has completed the course or module
-            $table->decimal('progress_percentage', 5, 2)->default(0); // Progress in percentage (0-100%)
+            // Foreign keys
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();  // If a user is deleted, remove watch records
+            $table->foreignId('course_id')
+                  ->constrained('courses')
+                  ->cascadeOnDelete(); // If a course is deleted, remove watch records
 
-            // Indexes for optimized querying
-            $table->index('user_id'); // Index for faster querying by user
-            $table->index('course_id'); // Index for faster querying by course
-            $table->index('last_watched_at'); // Index for querying by last time a course was watched
-            $table->index('completion_status'); // Index for filtering by completion status
-            $table->index('device_type'); // Index for device usage filtering
-            $table->index('platform'); // Index for platform-based filtering
+            // Core tracking fields
+            $table->integer('watch_time_minutes')->default(0)
+                  ->comment('Accumulated total watch time in minutes');
+            $table->timestamp('last_watched_at')->nullable()
+                  ->comment('Last timestamp the user watched the course content');
+
+            $table->enum('completion_status', ['in_progress', 'completed'])
+                  ->default('in_progress')
+                  ->comment('Tracks user’s completion status for the course');
+
+            // Additional metadata
+            $table->string('device_type')->nullable()
+                  ->comment('Device used: mobile, desktop, etc.');
+            $table->string('platform')->nullable()
+                  ->comment('Platform used: Web, iOS, Android, etc.');
+            $table->json('metadata')->nullable()
+                  ->comment('Flexible JSON for storing extra data (e.g., chapters watched)');
+
+            // Use decimal for fractional progress to avoid float rounding issues
+            $table->decimal('progress_percentage', 5, 2)
+                  ->default(0.00)
+                  ->comment('User’s progress in the course (0.00–100.00)');
+
+            // Timestamps
+            $table->timestamps();
+
+            // Optional soft deletes (logical removal)
+            $table->softDeletes();
+
+            // Indexes for frequent queries
+            $table->index('user_id');
+            $table->index('course_id');
+            $table->index('last_watched_at');
+            $table->index('completion_status');
+            $table->index('device_type');
+            $table->index('platform');
         });
     }
 
