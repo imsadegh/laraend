@@ -27,7 +27,7 @@ class OTPVerificationController extends Controller
 
         $parameters = [
             [
-                "name" => "PARAMETER1",
+                "name" => "Code",
                 "value" => $otpCode,
             ],
         ];
