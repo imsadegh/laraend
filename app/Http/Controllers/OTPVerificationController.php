@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -98,6 +99,12 @@ class OTPVerificationController extends Controller
         if ($cachedOtp && $cachedOtp == $otp) {
             // OTP is valid; clear it from the cache
             Cache::forget("otp_$phoneNumber");
+
+            // Update the user to mark as verified
+            $user = User::where('phone_number', $phoneNumber)->first();
+            if ($user) {
+                $user->update(['is_verified' => true]);
+            }
 
             return response()->json(['message' => 'OTP verified successfully.'], 200);
         }

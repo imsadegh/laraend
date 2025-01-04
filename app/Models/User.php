@@ -35,6 +35,7 @@ class User extends Authenticatable
         'zip_code',
         'profile_pic_url',
         'suspended',
+        'is_verified',
     ];
 
     /**

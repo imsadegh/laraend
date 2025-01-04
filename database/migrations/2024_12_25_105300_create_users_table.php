@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('zip_code')->nullable(); // New field
             $table->string('profile_pic_url')->nullable(); // New field for profile picture
 
+            $table->boolean('is_verified')->default(false);
             $table->boolean('suspended')->default(false); // New field for user status
             $table->timestamp('email_verified_at')->nullable();
 
