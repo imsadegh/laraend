@@ -10,6 +10,7 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::post('/signup', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::post('/otp/send', [OTPVerificationController::class, 'sendOTP']);
 Route::post('/otp/verify', [OTPVerificationController::class, 'verifyOTP']);

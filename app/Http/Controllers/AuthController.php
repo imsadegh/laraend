@@ -56,4 +56,41 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'User registered successfully!', 'user' => $user], 201);
     }
+
+    public function login(Request $request)
+    {
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'phone_number' => 'required|regex:/^09\d{9}$/',
+            'password' => 'required|string|min:8',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
+        // Attempt to find the user
+        $user = User::where('phone_number', $request->phone_number)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['errors' => ['credentials' => 'Invalid phone number or password.']], 401);
+        }
+
+        // Generate an access token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful.',
+            'accessToken' => $token,
+            'userData' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'phone_number' => $user->phone_number,
+                'email'=> $user->email,
+                'role_id' => $user->role_id,
+            ],
+            'userAbilityRules' => $user->getAbilityRules(), // Use the model's method
+        ], 200);
+    }
 }

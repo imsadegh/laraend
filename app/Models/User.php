@@ -94,4 +94,37 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'role_user')
                     ->withTimestamps(); // Include pivot table timestamps
     }
+
+    /**
+ * Get the ability rules for the user based on their role.
+ *
+ * @return array
+ */
+public function getAbilityRules(): array
+{
+    switch ($this->role_id) {
+        case 1: // Student
+            return [
+                ['action' => 'read', 'subject' => 'Course'],
+                ['action' => 'submit', 'subject' => 'Assignment'],
+            ];
+        case 2: // Teacher
+            return [
+                ['action' => 'manage', 'subject' => 'Course'],
+                ['action' => 'grade', 'subject' => 'Assignment'],
+            ];
+        case 3: // Assistant
+            return [
+                ['action' => 'assist', 'subject' => 'Course'],
+                ['action' => 'submit', 'subject' => 'Grade'],
+            ];
+        case 4: // Manager
+            return [
+                ['action' => 'manage', 'subject' => 'all'],
+            ];
+        default:
+            return [];
+    }
+}
+
 }
