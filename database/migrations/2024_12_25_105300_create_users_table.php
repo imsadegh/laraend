@@ -14,25 +14,26 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id(); // Primary Key
 
-            $table->foreignId('role_id')
+            $table->foreignId('role_id') // Foreign key to roles table
                   ->nullable()   // If you want to allow users with no specific role
                   ->constrained('roles')
                   ->nullOnDelete();
 
-            $table->string('first_name'); // New field
-            $table->string('last_name'); // New field
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->string('full_name');
             $table->string('username')->nullable()->unique(); // Ensure username is unique
             $table->string('email')->nullable()->unique();
-            $table->string('phone_number')->unique(); // New field
+            $table->string('phone_number')->unique();
             // $table->string('role')->default('Student'); // Default role
-            $table->enum('sex', ['male', 'female', 'other'])->nullable(); // New field
-            $table->string('address')->nullable(); // New field
-            $table->string('city')->nullable(); // New field
-            $table->string('zip_code')->nullable(); // New field
-            $table->string('profile_pic_url')->nullable(); // New field for profile picture
+            $table->enum('sex', ['male', 'female', 'other'])->nullable();
+            $table->string('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('zip_code')->nullable();
+            $table->string('avatar')->nullable(); // for profile picture
 
             $table->boolean('is_verified')->default(false);
-            $table->boolean('suspended')->default(false); // New field for user status
+            $table->boolean('suspended')->default(false); // for user status
             $table->timestamp('email_verified_at')->nullable();
 
             $table->string('password');

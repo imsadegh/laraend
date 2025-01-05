@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Models\UserActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -31,11 +33,14 @@ class AuthController extends Controller
         $username = $request->input('username', strtolower($request->first_name . '.' . $request->last_name));
         // Ensure the username is unique
         $username = User::where('username', $username)->exists() ? $username . rand(100, 999) : $username;
+        // Create the fullname by merging first_name and last_name
+        $fullname = $request->first_name . ' ' . $request->last_name;
 
         // Create the user
         $user = User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
+            'full_name' => $fullname, // Assign generated fullname
             'phone_number' => $request->phone_number,
             'username' => $username, // Assign generated username
             // 'email' => $request->email,
@@ -61,7 +66,8 @@ class AuthController extends Controller
     {
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'phone_number' => 'required|regex:/^09\d{9}$/',
+            // 'phone_number' => 'required|regex:/^09\d{9}$/',
+            'email' => 'required|email',
             'password' => 'required|string|min:8',
         ]);
 
@@ -70,14 +76,20 @@ class AuthController extends Controller
         }
 
         // Attempt to find the user
-        $user = User::where('phone_number', $request->phone_number)->first();
+        // $user = User::where('phone_number', $request->phone_number)->first();
+        $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['errors' => ['credentials' => 'Invalid phone number or password.']], 401);
         }
 
         // Generate an access token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // $token = $user->createToken('auth_token')->plainTextToken;
+        try {
+            $token = JWTAuth::fromUser($user);
+        } catch (JWTException $e) {
+            return response()->json(['message' => 'Could not create token'], 500);
+        }
 
         return response()->json([
             'message' => 'Login successful.',
@@ -86,9 +98,12 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
+                'full_name' => $user->full_name,
                 'phone_number' => $user->phone_number,
                 'email'=> $user->email,
+                'avatar' => $user->avatar,
                 'role_id' => $user->role_id,
+                'role' => $user->role->name,
             ],
             'userAbilityRules' => $user->getAbilityRules(), // Use the model's method
         ], 200);

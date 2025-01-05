@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,7 +13,7 @@ use App\Models\Role; // Import the Role model
 use App\Models\UserActivityLog; // Import UserActivityLog
 use App\Models\Session; // Import Session (if it exists)
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens,HasFactory, Notifiable;
@@ -28,12 +30,13 @@ class User extends Authenticatable
         'role_id', // Updated to store role_id
         'first_name',
         'last_name',
+        'full_name',
         'phone_number',
         'sex',
         'address',
         'city',
         'zip_code',
-        'profile_pic_url',
+        'avatar',
         'suspended',
         'is_verified',
     ];
@@ -62,12 +65,25 @@ class User extends Authenticatable
         ];
     }
 
+    public function getJWTIdentifier()
+    {
+        // Return the primary key of the user
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        // Return any custom claims you want to add to the JWT
+        return [];
+    }
+
     /**
      * Relationship: User belongs to a Role.
      */
     public function role()
     {
-        return $this->belongsTo(Role::class);
+        // return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     /**
