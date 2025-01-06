@@ -16,7 +16,7 @@ use App\Models\Session; // Import Session (if it exists)
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens,HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -78,15 +78,6 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
-     * Relationship: User belongs to a Role.
-     */
-    public function role()
-    {
-        // return $this->belongsTo(Role::class);
-        return $this->belongsTo(Role::class, 'role_id');
-    }
-
-    /**
      * Relationship: User has many Activity Logs.
      */
     public function activityLogs()
@@ -103,44 +94,53 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
+     * Relationship: User belongs to a Role.
+     */
+    public function role()
+    {
+        // return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    /**
      * Relationship: User has many Roles (for pivot table role_user).
      */
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'role_user')
-                    ->withTimestamps(); // Include pivot table timestamps
+            ->withTimestamps(); // Include pivot table timestamps
     }
 
     /**
- * Get the ability rules for the user based on their role.
- *
- * @return array
- */
-public function getAbilityRules(): array
-{
-    switch ($this->role_id) {
-        case 1: // Student
-            return [
-                ['action' => 'read', 'subject' => 'Course'],
-                ['action' => 'submit', 'subject' => 'Assignment'],
-            ];
-        case 2: // Teacher
-            return [
-                ['action' => 'manage', 'subject' => 'Course'],
-                ['action' => 'grade', 'subject' => 'Assignment'],
-            ];
-        case 3: // Assistant
-            return [
-                ['action' => 'assist', 'subject' => 'Course'],
-                ['action' => 'submit', 'subject' => 'Grade'],
-            ];
-        case 4: // Manager
-            return [
-                ['action' => 'manage', 'subject' => 'all'],
-            ];
-        default:
-            return [];
+     * Get the ability rules for the user based on their role.
+     *
+     * @return array
+     */
+    public function getAbilityRules(): array
+    {
+        switch ($this->role_id) {
+            case 1: // Student
+                return [
+                    ['action' => 'read', 'subject' => 'Course'],
+                    ['action' => 'submit', 'subject' => 'Assignment'],
+                ];
+            case 2: // Teacher
+                return [
+                    ['action' => 'manage', 'subject' => 'Course'],
+                    ['action' => 'grade', 'subject' => 'Assignment'],
+                ];
+            case 3: // Assistant
+                return [
+                    ['action' => 'assist', 'subject' => 'Course'],
+                    ['action' => 'submit', 'subject' => 'Grade'],
+                ];
+            case 4: // Admin
+                return [
+                    ['action' => 'manage', 'subject' => 'all'],
+                ];
+            default:
+                return [];
+        }
     }
-}
 
 }

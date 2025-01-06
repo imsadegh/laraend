@@ -17,7 +17,7 @@ class RolesTableSeeder extends Seeder
             ['name' => 'Student', 'description' => 'A student user'],
             ['name' => 'Teacher', 'description' => 'A teacher user'],
             ['name' => 'Assistant', 'description' => 'A teaching assistant'],
-            ['name' => 'Manager', 'description' => 'A manager for administrative purposes'],
+            ['name' => 'admin', 'description' => 'An admin user'],
         ]);
     }
 }

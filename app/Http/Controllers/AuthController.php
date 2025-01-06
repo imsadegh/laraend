@@ -77,7 +77,8 @@ class AuthController extends Controller
 
         // Attempt to find the user
         // $user = User::where('phone_number', $request->phone_number)->first();
-        $user = User::where('email', $request->email)->first();
+        // $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->with('role')->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['errors' => ['credentials' => 'Invalid phone number or password.']], 401);
@@ -99,6 +100,7 @@ class AuthController extends Controller
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'full_name' => $user->full_name,
+                'username' => $user->username,
                 'phone_number' => $user->phone_number,
                 'email'=> $user->email,
                 'avatar' => $user->avatar,
