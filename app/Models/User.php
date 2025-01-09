@@ -121,6 +121,7 @@ class User extends Authenticatable implements JWTSubject
         switch ($this->role_id) {
             case 1: // Student
                 return [
+                    ['action' => 'read', 'subject' => 'AclDemo'],
                     ['action' => 'read', 'subject' => 'Course'],
                     ['action' => 'submit', 'subject' => 'Assignment'],
                 ];
