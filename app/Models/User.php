@@ -119,16 +119,18 @@ class User extends Authenticatable implements JWTSubject
     public function getAbilityRules(): array
     {
         switch ($this->role_id) {
+            // todo - need to update roles and permissions
             case 1: // Student
                 return [
                     ['action' => 'read', 'subject' => 'AclDemo'],
                     ['action' => 'read', 'subject' => 'Course'],
                     ['action' => 'submit', 'subject' => 'Assignment'],
                 ];
-            case 2: // Teacher
-                return [
-                    ['action' => 'manage', 'subject' => 'Course'],
-                    ['action' => 'grade', 'subject' => 'Assignment'],
+                case 2: // Teacher
+                    return [
+                    ['action' => 'manage', 'subject' => 'all'],
+                    // ['action' => 'manage', 'subject' => 'Course'],
+                    // ['action' => 'grade', 'subject' => 'Assignment'],
                 ];
             case 3: // Assistant
                 return [
