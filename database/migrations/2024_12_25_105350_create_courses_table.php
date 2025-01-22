@@ -18,11 +18,13 @@ return new class extends Migration
             $table->string('course_code')->unique(); // Unique course code (for identification)
 
             // Foreign keys referencing the 'users' table
-            // If teacher is deleted, remove course or reassign logic
-            $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade'); // Teacher of the course
+
+            // If Instructor is deleted, remove course or reassign logic
+            // $table->foreignId('instructor_id')->constrained('users')->onDelete('cascade'); // Instructor of the course
+            $table->foreignId('instructor_id')->nullable()->constrained('users')->nullOnDelete(); // FK to the instructor (user)
+
             // If assistant is deleted, set this null
             $table->foreignId('assistant_id')->nullable()->constrained('users')->nullOnDelete(); // Optional assistant
-            $table->foreignId('instructor_id')->nullable()->constrained('users')->nullOnDelete(); // FK to the instructor (user)
 
             // Foreign key for categories (rename if you have a different table name)
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade'); // FK to course categories table

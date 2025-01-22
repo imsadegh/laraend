@@ -2,59 +2,59 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Course;
+use Illuminate\Support\Facades\Validator; // Add this line
+
+// todo - Customize validation error messages if needed by passing a third parameter to the validate method.
+// todo - Use $hidden or $appends in the Course model to control the serialized response.
 
 class CourseController extends Controller
 {
     //
     public function store(Request $request)
     {
-        // Validate incoming data
-        $validated = $request->validate([
+        // $user = Auth::user();
+
+        // method 1:
+        // Check if the user has permission to create courses
+        // if (!$user || !in_array($user->role_id, [2, 4])) { // Role 2: Instructor, Role 4: Admin
+        //     return response()->json(['message' => 'Unauthorized'], 403);
+        // }
+        // method 2:
+        if ($request->user()->role_id !== 5) { // 5 for Admin
+            return response()->json(['message' => 'Unauthorizedddd, dear user!!'], 403);
+        }
+
+        // note - you may want to use the string fot the url if it fails
+        // Validate the request
+        $validator = Validator::make($request->all(), [
             'course_name' => 'required|string|max:255',
-            'course_code' => 'required|string|max:50|unique:courses,course_code',
-            'teacher_id' => 'required|exists:users,id',
+            'course_code' => 'required|string|max:255|unique:courses,course_code',
+            'instructor_id' => 'required|exists:users,id',
             'assistant_id' => 'nullable|exists:users,id',
-            'instructor_id' => 'nullable|exists:users,id',
             'category_id' => 'required|exists:categories,id',
-            'capacity' => 'nullable|integer|min:0',
-            'visibility' => 'required|boolean',
-            'featured' => 'required|boolean',
+            'capacity' => 'nullable|integer|min:1',
+            'visibility' => 'boolean',
+            'featured' => 'nullable|boolean',
             'description' => 'nullable|string',
             'about' => 'nullable|string',
-            'discussion_group_url' => 'nullable|url',
-            'status' => 'required|in:active,archived,draft',
-            'allow_waitlist' => 'required|boolean',
-            'start_date' => 'nullable|date',
+            'discussion_group_url' => 'nullable|string',
+            'status' => 'in:active,archived,draft',
+            'allow_waitlist' => 'boolean',
+            'start_date' => 'nullable|date', // 2025-01-01T00:00:00.000Z  Thu Jan 30 2025 00:00:00 GMT+0330 (Iran Standard Time)
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'prerequisites' => 'nullable|array',
-            'tags' => 'nullable|array',
-            'thumbnail_url' => 'nullable|url',
+            // 'prerequisites' => 'nullable|json',
+            'tags' => 'nullable|json',
+            'thumbnail_url' => 'nullable|string',
         ]);
 
-        // Create the course
-        $course = Course::create([
-            'course_name' => $validated['course_name'],
-            'course_code' => $validated['course_code'],
-            'teacher_id' => $validated['teacher_id'],
-            'assistant_id' => $validated['assistant_id'] ?? null,
-            'instructor_id' => $validated['instructor_id'] ?? null,
-            'category_id' => $validated['category_id'],
-            'capacity' => $validated['capacity'] ?? null,
-            'visibility' => $validated['visibility'],
-            'featured' => $validated['featured'],
-            'description' => $validated['description'] ?? null,
-            'about' => $validated['about'] ?? null,
-            'discussion_group_url' => $validated['discussion_group_url'] ?? null,
-            'status' => $validated['status'],
-            'allow_waitlist' => $validated['allow_waitlist'],
-            'start_date' => $validated['start_date'] ?? null,
-            'end_date' => $validated['end_date'] ?? null,
-            'prerequisites' => $validated['prerequisites'] ?? null,
-            'tags' => $validated['tags'] ?? null,
-            'thumbnail_url' => $validated['thumbnail_url'] ?? null,
-        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $course = Course::create($request->all());
 
         return response()->json([
             'message' => 'Course created successfully.',

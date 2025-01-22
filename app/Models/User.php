@@ -126,7 +126,7 @@ class User extends Authenticatable implements JWTSubject
                     ['action' => 'read', 'subject' => 'Course'],
                     ['action' => 'submit', 'subject' => 'Assignment'],
                 ];
-                case 2: // Teacher
+                case 2: // Instructor
                     return [
                     ['action' => 'manage', 'subject' => 'all'],
                     // ['action' => 'manage', 'subject' => 'Course'],
@@ -137,7 +137,7 @@ class User extends Authenticatable implements JWTSubject
                     ['action' => 'assist', 'subject' => 'Course'],
                     ['action' => 'submit', 'subject' => 'Grade'],
                 ];
-            case 4: // Admin
+            case 5: // Admin
                 return [
                     ['action' => 'manage', 'subject' => 'all'],
                 ];

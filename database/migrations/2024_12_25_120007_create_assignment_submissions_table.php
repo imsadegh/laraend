@@ -33,7 +33,7 @@ return new class extends Migration
             $table->decimal('score', 5, 2)->nullable();        // Score for this submission
             $table->integer('revision_number')->default(1);    // Track how many times resubmitted
             $table->boolean('is_late')->default(false);        // Whether the submission was late
-            $table->json('feedback')->nullable();              // JSON for teacher/assistant feedback
+            $table->json('feedback')->nullable();              // JSON for Instructor/assistant feedback
 
             // Additional considerations
             $table->timestamp('last_reviewed_at')->nullable(); // When it was last graded/reviewed
@@ -41,7 +41,7 @@ return new class extends Migration
                   ->nullable()
                   ->constrained('users')
                   ->nullOnDelete();
-              // The teacher/assistant who reviewed it; null if that user is deleted
+              // The Instructor/assistant who reviewed it; null if that user is deleted
 
             $table->boolean('grade_visibility')->default(true); // Whether grade is visible to student
             $table->json('metadata')->nullable();               // Extra metadata (e.g., file size, extra logs)

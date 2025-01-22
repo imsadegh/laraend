@@ -41,11 +41,11 @@ return new class extends Migration
             $table->json('score_details')->nullable()
                   ->comment('Breakdown of partial scores, question by question if needed');
             $table->json('grading_feedback')->nullable()
-                  ->comment('Teacher or system feedback on performance');
+                  ->comment('Instructor or system feedback on performance');
             $table->boolean('is_reexam')->default(false)
                   ->comment('Indicates if this record is for a re-exam attempt');
 
-            // Reviewer reference (teacher or assistant)
+            // Reviewer reference (Instructor or assistant)
             $table->foreignId('reviewed_by')
                   ->nullable()
                   ->constrained('users')

@@ -2,21 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
 {
-    //
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'course_name',
         'course_code',
-        'teacher_id',
-        'assistant_id',
         'instructor_id',
+        'assistant_id',
         'category_id',
         'capacity',
         'visibility',
@@ -31,14 +30,14 @@ class Course extends Model
         'prerequisites',
         'tags',
         'thumbnail_url',
-        'enrolled_students_count',
+        // 'enrolled_students_count',
     ];
 
     protected $casts = [
         'prerequisites' => 'array',
         'tags' => 'array',
         'visibility' => 'boolean',
-        'featured' => 'boolean',
+        // 'featured' => 'boolean',
         'allow_waitlist' => 'boolean',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
@@ -48,22 +47,16 @@ class Course extends Model
      * Relationships
      */
 
-    // Teacher (mandatory)
-    public function teacher()
+    // Instructor (mandatory)
+    public function instructor()
     {
-        return $this->belongsTo(User::class, 'teacher_id');
+        return $this->belongsTo(User::class, 'instructor_id');
     }
 
     // Assistant (optional)
     public function assistant()
     {
         return $this->belongsTo(User::class, 'assistant_id');
-    }
-
-    // Instructor (optional)
-    public function instructor()
-    {
-        return $this->belongsTo(User::class, 'instructor_id');
     }
 
     // Category (mandatory)

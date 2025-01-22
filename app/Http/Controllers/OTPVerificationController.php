@@ -20,8 +20,8 @@ class OTPVerificationController extends Controller
         $phoneNumber = $request->phone_number;
         $otpCode = rand(100000, 999999); // Generate a 6-digit OTP
         $templateId = 968053; // Replace with your SMS.ir template ID
-        $apiKey = env('SMSIR_API_KEY'); // Fetch API key from .env file
-        // $apiKey = 'uqEXc095XazSbgWK1BIi55Y82czWqsn7CJ6UMJzaorl09PdZ'; // Fetch API key from .env file
+        // $apiKey = env('SMSIR_API_KEY'); // Fetch API key from .env file
+        $apiKey = 'uqEXc095XazSbgWK1BIi55Y82czWqsn7CJ6UMJzaorl09PdZ'; // Fetch API key from .env file
 
         // Debugging: Print the value and type of $apiKey
         // dd($apiKey, gettype($apiKey));
