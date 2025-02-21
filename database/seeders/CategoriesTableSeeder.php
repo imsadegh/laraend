@@ -18,13 +18,13 @@ class CategoriesTableSeeder extends Seeder
 
         // Example category data
         $categories = [
-            ['name' => 'Technology', 'parent_category_id' => null],
-            ['name' => 'Programming', 'parent_category_id' => 1], // Subcategory of 'Technology'
-            ['name' => 'Web Development', 'parent_category_id' => 2], // Subcategory of 'Programming'
-            ['name' => 'Health & Fitness', 'parent_category_id' => null],
-            ['name' => 'Nutrition', 'parent_category_id' => 4], // Subcategory of 'Health & Fitness'
-            ['name' => 'Lifestyle', 'parent_category_id' => null],
-            ['name' => 'Photography', 'parent_category_id' => 6], // Subcategory of 'Lifestyle'
+            ['name' => 'فناوری', 'parent_category_id' => null],
+            ['name' => 'برنامه نویسی', 'parent_category_id' => 1], // Subcategory of 'Technology'
+            ['name' => 'توسعه وب', 'parent_category_id' => 2], // Subcategory of 'Programming'
+            ['name' => 'سلامت و ورزش', 'parent_category_id' => null],
+            ['name' => 'رژیم', 'parent_category_id' => 4], // Subcategory of 'Health & Fitness'
+            ['name' => 'سبک زندگی', 'parent_category_id' => null],
+            ['name' => 'عکاسی', 'parent_category_id' => 6], // Subcategory of 'Lifestyle'
         ];
 
         // Insert data into the 'categories' table

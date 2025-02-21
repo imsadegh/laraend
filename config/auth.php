@@ -41,6 +41,7 @@ return [
             'provider' => 'users',
         ],
 
+        // New token-based API guard
         'api' => [
         'driver' => 'jwt', // Use 'jwt' for JWT-based authentication
         'provider' => 'users',

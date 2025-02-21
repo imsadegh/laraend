@@ -23,7 +23,7 @@ return new class extends Migration
             // Core assignment fields
             $table->string('title');                       // Assignment title
             $table->text('description')->nullable();       // Assignment description
-            $table->timestamp('submission_deadline')->nullable(); // Submission deadline
+            $table->timestamp('submission_deadline')->nullable(); // Submission due date
             $table->json('requirements')->nullable();      // e.g., rubrics, special instructions
 
             // Use decimal for scoring to avoid float precision issues
@@ -34,6 +34,7 @@ return new class extends Migration
             // Additional considerations
             $table->enum('type', ['individual', 'group'])->default('individual');
             $table->boolean('allow_late_submission')->default(false);
+            $table->boolean('visible')->default(false);
             $table->integer('late_submission_penalty')->nullable()
                   ->comment('Penalty % for late submissions');
             $table->json('resources')->nullable();         // JSON for storing links or files

@@ -122,15 +122,16 @@ class User extends Authenticatable implements JWTSubject
             // todo - need to update roles and permissions
             case 1: // Student
                 return [
-                    ['action' => 'read', 'subject' => 'AclDemo'],
+                    ['action' => 'read', 'subject' => 'AclDemo'], // this is a temporary role
                     ['action' => 'read', 'subject' => 'Course'],
                     ['action' => 'submit', 'subject' => 'Assignment'],
                 ];
                 case 2: // Instructor
                     return [
-                    ['action' => 'manage', 'subject' => 'all'],
-                    // ['action' => 'manage', 'subject' => 'Course'],
-                    // ['action' => 'grade', 'subject' => 'Assignment'],
+                    // ['action' => 'manage', 'subject' => 'all'],
+                    ['action' => 'manage', 'subject' => 'AclDemo'], // this is a temporary role
+                    ['action' => 'manage', 'subject' => 'Course'],
+                    ['action' => 'grade', 'subject' => 'Assignment'],
                 ];
             case 3: // Assistant
                 return [
