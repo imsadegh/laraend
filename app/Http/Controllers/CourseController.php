@@ -83,49 +83,60 @@ class CourseController extends Controller
         }
 
         // Check if the authenticated user is the instructor for this course with is_verified true or is the admin
-        if (!auth()->check() || (($course->instructor_id != auth()->user()->id || !auth()->user()->is_verified) && auth()->user()->role->name !== 'admin')){
+        if (!auth()->check() || (($course->instructor_id != auth()->user()->id || !auth()->user()->is_verified) && auth()->user()->role->name !== 'admin')) {
             return response()->json(['message' => 'Unauthorized or it is not a verifed user.'], 403);
         }
 
         $request->validate([
-            'course_name' => 'required|string|max:255',
+            // 'course_name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'about' => 'nullable|string',
             'visibility' => 'boolean',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'status' => 'in:active,archived,draft',
+            'discussion_group_url' => 'nullable|string',
+            // 'start_date' => 'nullable|date',
+            // 'end_date' => 'nullable|date|after_or_equal:start_date',
             // Add any other fields as necessary
         ]);
 
-        $course->update($request->all());
+        $course->update($request->only([
+            'description',
+            // 'about',
+            'visibility',
+            'status',
+            'discussion_group_url',
+            // 'start_date',
+            // 'end_date'
+        ]));
         return response()->json(['message' => 'Course updated successfully', 'course' => $course], 200);
     }
 
     public function getInstructorCourses(Request $request)
-{
-    // Get the authenticated instructor
-    $instructorId = auth()->id();
+    {
+        // Get the authenticated instructor
+        $instructorId = auth()->id();
 
-    // Fetch courses where the instructor is assigned
-    $courses = Course::where('instructor_id', $instructorId)
-                     ->select('id', 'course_name', 'course_code', 'assistant_id', 'status', 'visibility', 'description', 'about', 'discussion_group_url', 'start_date', 'end_date', 'thumbnail_url')
-                     ->get();
+        // Fetch courses where the instructor is assigned
+        $courses = Course::where('instructor_id', $instructorId)
+            ->select('id', 'course_name', 'course_code', 'assistant_id', 'status', 'visibility', 'description', 'about', 'discussion_group_url', 'start_date', 'end_date', 'thumbnail_url')
+            ->get();
 
-    return response()->json($courses);
-}
-
-public function show($id)
-{
-    $course = Course::find($id);
-
-    if (!$course) {
-        return response()->json(['message' => 'Course not found'], 404);
+        return response()->json($courses);
     }
 
-    // Ensure only the assigned instructor or an admin can fetch this course
-    if ($course->instructor_id != auth()->id() && auth()->user()->role->name !== 'admin') {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
+    public function show($id)
+    {
+        $course = Course::find($id);
 
-    return response()->json($course);
-}
+        if (!$course) {
+            return response()->json(['message' => 'Course not found'], 404);
+        }
+
+        // Ensure only the assigned instructor or an admin can fetch this course
+        if ($course->instructor_id != auth()->id() && auth()->user()->role->name !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return response()->json($course);
+    }
 }

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignId('assistant_id')->nullable()->constrained('users')->nullOnDelete(); // Optional assistant
 
             // Foreign key for categories (rename if you have a different table name)
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade'); // FK to course categories table
+            $table->foreignId('category_id')->constrained('categories')->nullOnDelete(); // FK to course categories table
 
             // Additional course fields
             $table->integer('capacity')->nullable(); // Maximum number of students
@@ -37,6 +37,7 @@ return new class extends Migration
             $table->text('about')->nullable(); // More detailed course information
             $table->string('discussion_group_url')->nullable(); // URL for discussion groups
             $table->enum('status', ['active', 'archived', 'draft'])->default('active'); // Status of the course
+            $table->boolean('is_finished')->default(false); // If the course has ended
 
             // Timestamps and optional soft deletes
             $table->softDeletes(); // Uncomment if you want "deleted_at" for soft deletions

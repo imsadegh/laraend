@@ -51,11 +51,13 @@ Route::middleware('auth:api')->group(function () {
 // Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
 // Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
 Route::middleware('auth:api')->group(function () {
+    // Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
+    Route::get('/instructor/assignments', [AssignmentController::class, 'index']);
     Route::post('/courses/{course}/assignments', [AssignmentController::class, 'store']);
+    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
-    Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
-    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
+
 });
 
 // Route::fallback(function () {

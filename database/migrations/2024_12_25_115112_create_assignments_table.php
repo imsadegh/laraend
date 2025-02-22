@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('assignments', function (Blueprint $table) {
@@ -16,9 +13,9 @@ return new class extends Migration
 
             // Link to 'courses' table
             $table->foreignId('course_id')
+                  ->nullable()
                   ->constrained('courses')
-                  ->cascadeOnDelete();
-              // If the course is deleted, remove its assignments as well.
+                  ->nullOnDelete();
 
             // Core assignment fields
             $table->string('title');                       // Assignment title

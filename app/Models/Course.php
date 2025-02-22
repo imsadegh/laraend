@@ -24,13 +24,15 @@ class Course extends Model
         'about',
         'discussion_group_url',
         'status',
+        'is_finished',
+        // 'enrolled_students_count',
         'allow_waitlist',
         'start_date',
         'end_date',
         'prerequisites',
         'tags',
         'thumbnail_url',
-        // 'enrolled_students_count',
+        'rating',
     ];
 
     protected $casts = [

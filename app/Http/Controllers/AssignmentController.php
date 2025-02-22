@@ -8,14 +8,46 @@ use Illuminate\Http\Request;
 class AssignmentController extends Controller
 {
     // Get all assignments for a course
-    public function index($courseId)
+    public function index()
     {
-        $course = Course::find($courseId);
-        if (!$course) {
-            return response()->json(['message' => 'Course not found'], 404);
-        }
+        // method 1:
+        // $course = Course::find($courseId);
+        // if (!$course) {
+        //     return response()->json(['message' => 'Course not found'], 404);
+        // }
 
-        $assignments = Assignment::where('course_id', $courseId)->get();
+        // $assignments = Assignment::where('course_id', $courseId)->get();
+        // return response()->json($assignments);
+
+        // method 2:
+        // $user = auth()->user();
+        // // Get all courses where the user is the instructor
+        // $courses = Course::where('instructor_id', $user->id)->get();
+
+        // // Fetch all assignments for these courses
+        // $assignments = Assignment::whereIn('course_id', $courses->pluck('id'))->get();
+
+        // return response()->json($assignments);
+
+        // method 3:
+        $assignments = Assignment::with('course') // Assuming `course` is the relation on the Assignment model
+        ->whereHas('course', function($query) {
+            $query->where('instructor_id', auth()->id());
+        })
+        ->get()
+        ->map(function($assignment) {
+            return [
+                'id' => $assignment->id,
+                'title' => $assignment->title,
+                'description' => $assignment->description,
+                'submission_deadline' => $assignment->submission_deadline,
+                'max_score' => $assignment->max_score,
+                'course_name' => $assignment->course->course_name, // Add course name
+                'visible' => $assignment->visible,
+                'type' => $assignment->type,
+            ];
+        });
+
         return response()->json($assignments);
     }
 
