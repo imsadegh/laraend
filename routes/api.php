@@ -8,6 +8,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\TuitionController;
 
 Route::middleware(['auth:api'])->get('/user', function (Request $request) {
     return $request->user();
@@ -21,23 +22,15 @@ Route::post('/otp/send', [OTPVerificationController::class, 'sendOTP']);
 Route::post('/otp/verify', [OTPVerificationController::class, 'verifyOTP']);
 
 // Course Management
-// Route::post('/courses', [CourseController::class, 'store'])->middleware('auth:api');
-// Route::put('/courses/{course}', [CourseController::class, 'update'])->middleware('auth:api');
-// Route::middleware('auth:api')->group(function () {
-//     Route::get('/instructor/courses', [CourseController::class, 'getInstructorCourses']);
-//     Route::get('/courses/{course}', [CourseController::class, 'show']);
-// });
 Route::middleware('auth:api')->group(function () {
     Route::post('/courses', [CourseController::class, 'store']);
+    Route::get('/courses', [CourseController::class, 'index']);
     Route::put('/courses/{course}', [CourseController::class, 'update']);
     Route::get('/courses/{course}', [CourseController::class, 'show']);
     Route::get('/instructor/courses', [CourseController::class, 'getInstructorCourses']);
 });
 
 // Instructor, Categories, and Prerequisites
-// Route::get('/instructors', [InstructorController::class, 'index'])->middleware('auth:api');
-// Route::get('/categories', [CategoryController::class, 'index'])->middleware('auth:api');
-// Route::get('/courses/prerequisites', [CourseController::class, 'getPrerequisites'])->middleware('auth:api');
 Route::middleware('auth:api')->group(function () {
     Route::get('/instructors', [InstructorController::class, 'index']);
     Route::get('/categories', [CategoryController::class, 'index']);
@@ -45,11 +38,6 @@ Route::middleware('auth:api')->group(function () {
 });
 
 // Assignments Management
-// Route::post('/courses/{course}/assignments', [AssignmentController::class, 'store'])->middleware('auth:api');
-// Route::put('/assignments/{assignment}', [AssignmentController::class, 'update'])->middleware('auth:api');
-// Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy'])->middleware('auth:api');
-// Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
-// Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
 Route::middleware('auth:api')->group(function () {
     // Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
     Route::get('/instructor/assignments', [AssignmentController::class, 'index']);
@@ -58,6 +46,12 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
 
+});
+
+// Tuition Payment
+Route::middleware('auth:api')->group(function () {
+    Route::post('/tuition/pay', [TuitionController::class, 'pay']);
+    Route::get('/tuition/summary', [TuitionController::class, 'summary']);
 });
 
 // Route::fallback(function () {

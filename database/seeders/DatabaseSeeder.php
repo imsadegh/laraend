@@ -8,15 +8,14 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
+        // \Artisan::call('migrate:fresh');
         $this->call(RoleSeeder::class);
+        $this->call(UserSeeder::class);
         $this->call(CategorySeeder::class);
+        $this->call(CourseSeeder::class);
         $this->call(AssignmentSeeder::class);
-        $this->call(FixedUserSeeder::class);
 
         // User::factory(10)->create();
 

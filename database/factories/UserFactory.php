@@ -12,11 +12,6 @@ use App\Models\Role;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The name of the factory's corresponding model.
-     *
-     * @var string
-     */
     protected $model = \App\Models\User::class;
 
     /**
@@ -24,12 +19,6 @@ class UserFactory extends Factory
      */
     // protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-    //  * @return array<string, mixed>
-     * @return array
-     */
     public function definition(): array
     {
         // Set the Faker locale to Persian
@@ -42,7 +31,7 @@ class UserFactory extends Factory
             // 'password' => static::$password ??= Hash::make('password'),
             // 'remember_token' => Str::random(10),
 
-            'role_id' => $this->faker->numberBetween(1, 5),
+            'role_id' => $this->faker->numberBetween(1, 3),
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
             'full_name' => function (array $attributes) {
@@ -79,12 +68,12 @@ class UserFactory extends Factory
      *
      * @return \Illuminate\Database\Eloquent\Factories\Factory
      */
-    public function admin()
-    {
-        return $this->state([
-            'role_id' => Role::factory()->state(['name' => 'admin']),  // Assuming 'admin' is a role in the roles table
-        ]);
-    }
+    // public function admin()
+    // {
+    //     return $this->state([
+    //         'role_id' => Role::factory()->state(['name' => 'admin']),  // Assuming 'admin' is a role in the roles table
+    //     ]);
+    // }
 
     /**
      * Indicate that the user is suspended.

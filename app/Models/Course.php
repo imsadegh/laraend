@@ -17,6 +17,7 @@ class Course extends Model
         'instructor_id',
         'assistant_id',
         'category_id',
+        'tuition_fee',
         'capacity',
         'visibility',
         'featured',
@@ -48,6 +49,16 @@ class Course extends Model
     /**
      * Relationships
      */
+
+    public function students()
+    {
+        return $this->belongsToMany(
+            User::class,         // Related model
+            'course_enrollments',// Pivot table name
+            'course_id',         // Foreign key on pivot table for the course
+            'user_id'            // Foreign key on pivot table for the student
+        )->withTimestamps();
+    }
 
     // Instructor (mandatory)
     public function instructor()

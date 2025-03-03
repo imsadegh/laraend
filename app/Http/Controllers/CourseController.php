@@ -13,6 +13,26 @@ use Illuminate\Http\JsonResponse;
 
 class CourseController extends Controller
 {
+    public function index(Request $request)
+    {
+        // Fetch only courses that are visible (e.g., visibility = true)
+        // You may also want to filter by 'status' = 'active' if that makes sense for your LMS
+
+        $query = Course::query();
+
+        // For instance, only fetch visible if '?visible=1' is in the query
+        if ($request->boolean('visible', false)) {
+            $query->where('visibility', true);
+        }
+
+        // Additional filters like status, category, etc. can go here.
+        if ($request->boolean('active', false)) {
+            $query->where('status', 'active');
+        }
+        $courses = $query->get();
+        return response()->json($courses);
+    }
+
     // todo - i should use show function instead of the function that is writen below, for fetch all data of a course at once
     public function getPrerequisites(): JsonResponse
     {
