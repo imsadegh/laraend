@@ -33,14 +33,20 @@ class CourseController extends Controller
         return response()->json($courses);
     }
 
-    // todo - i should use show function instead of the function that is writen below, for fetch all data of a course at once
-    public function getPrerequisites(): JsonResponse
+    public function show($id)
     {
-        $prerequisites = Course::select('course_code', 'course_name')
-            ->orderBy('course_name')
-            ->get();
+        $course = Course::find($id);
 
-        return response()->json($prerequisites, 200);
+        if (!$course) {
+            return response()->json(['message' => 'Course not found'], 404);
+        }
+
+        // Ensure only the assigned instructor or an admin can fetch this course
+        if ($course->instructor_id != auth()->id() && auth()->user()->role->name !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return response()->json($course);
     }
 
     public function store(Request $request)
@@ -64,28 +70,34 @@ class CourseController extends Controller
         // note - you may want to use the string fot the url if it fails
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'course_name' => 'required|string|max:255',
-            'course_code' => 'required|string|max:255|unique:courses,course_code',
+            'course_name'   => 'required|string|max:255',
+            'course_code'   => 'required|string|max:255|unique:courses,course_code',
             'instructor_id' => 'required|exists:users,id',
-            'assistant_id' => 'nullable|exists:users,id',
-            'category_id' => 'required|exists:categories,id',
-            'capacity' => 'nullable|integer|min:1',
-            'visibility' => 'boolean',
-            'featured' => 'nullable|boolean',
-            'description' => 'nullable|string',
-            'about' => 'nullable|string',
+            'assistant_id'  => 'nullable|exists:users,id',
+            'category_id'   => 'required|exists:categories,id',
+            'capacity'      => 'nullable|integer|min:1',
+            'visibility'    => 'boolean',
+            'featured'      => 'nullable|boolean',
+            'description'   => 'nullable|string',
+            'about'         => 'nullable|string',
             'discussion_group_url' => 'nullable|string',
-            'status' => 'in:active,archived,draft',
+            'status'        => 'in:active,archived,draft',
             'allow_waitlist' => 'boolean',
-            'start_date' => 'nullable|date', // 2025-01-01T00:00:00.000Z  Thu Jan 30 2025 00:00:00 GMT+0330 (Iran Standard Time)
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'prerequisites' => 'nullable|json',
-            'tags' => 'nullable|json',
+            'start_date'    => 'nullable|date', // 2025-01-01T00:00:00.000Z  Thu Jan 30 2025 00:00:00 GMT+0330 (Iran Standard Time)
+            'end_date'      => 'nullable|date|after_or_equal:start_date',
+            'prerequisites' => 'nullable|array',
+            'tags'          => 'nullable|array',
             'thumbnail_url' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $data = $request->all();
+        // If prerequisites is provided as a single string, convert it to an array
+        if (isset($data['prerequisites']) && !is_array($data['prerequisites'])) {
+            $data['prerequisites'] = [$data['prerequisites']];
         }
 
         $course = Course::create($request->all());
@@ -144,19 +156,25 @@ class CourseController extends Controller
         return response()->json($courses);
     }
 
-    public function show($id)
+    public function getPrerequisites(): JsonResponse
     {
-        $course = Course::find($id);
+        // $prerequisites = Course::select('course_code', 'course_name')
+        //     ->orderBy('course_code')
+        //     ->get();
+        // return response()->json($prerequisites, 200);
 
-        if (!$course) {
-            return response()->json(['message' => 'Course not found'], 404);
+        $courses = Course::select('prerequisites')->get();
+        $allPrerequisites = [];
+
+        foreach ($courses as $course) {
+            if (is_array($course->prerequisites)) {
+                $allPrerequisites = array_merge($allPrerequisites, $course->prerequisites);
+            }
         }
+        // Remove duplicate names and sort alphabetically
+        $uniquePrerequisites = array_values(array_unique($allPrerequisites));
+        sort($uniquePrerequisites);
 
-        // Ensure only the assigned instructor or an admin can fetch this course
-        if ($course->instructor_id != auth()->id() && auth()->user()->role->name !== 'admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        return response()->json($course);
+        return response()->json($uniquePrerequisites, 200);
     }
 }

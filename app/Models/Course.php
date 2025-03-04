@@ -60,6 +60,14 @@ class Course extends Model
         )->withTimestamps();
     }
 
+    // This will ensure that if a single course name is provided (as a string), it’s wrapped into an array before being stored.
+    public function setPrerequisitesAttribute($value)
+    {
+        $this->attributes['prerequisites'] = is_array($value)
+            ? json_encode($value)
+            : json_encode([$value]);
+    }
+
     // Instructor (mandatory)
     public function instructor()
     {

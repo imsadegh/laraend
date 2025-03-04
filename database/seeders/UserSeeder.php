@@ -26,10 +26,10 @@ class UserSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'first_name' => 'رضا',
-            'last_name' => 'یزدانی',
-            'full_name' => 'رضا یزدانی',
-            'username' => 'ya_reza',
+            // 'first_name' => 'رضا',
+            // 'last_name' => 'یزدانی',
+            // 'full_name' => 'رضا یزدانی',
+            // 'username' => 'ya_reza',
             'email' => 'instructor@demo.com',
             'phone_number' => '09109643694',
             'email_verified_at' => now(),
@@ -41,10 +41,10 @@ class UserSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'first_name' => 'علی',
-            'last_name' => 'رضایی',
-            'full_name' => 'علی رضایی',
-            'username' => 'ali_rezaei',
+            // 'first_name' => 'علی',
+            // 'last_name' => 'رضایی',
+            // 'full_name' => 'علی رضایی',
+            // 'username' => 'ali_rezaei',
             'email' => 'client@demo.com',
             'phone_number' => '09165464654',
             'email_verified_at' => now(),
