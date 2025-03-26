@@ -20,8 +20,9 @@ return new class extends Migration {
             $table->string('email')->nullable()->unique();
             $table->string('phone_number')->unique();
             $table->string('melli_code')->nullable()->unique();
+            $table->date('birth_date')->nullable();
 
-            // $table->string('role')->default('Student'); // Default role
+            $table->string('position_title')->nullable();
             $table->enum('sex', ['male', 'female', 'other'])->nullable();
             $table->string('address')->nullable();
             $table->string('city')->nullable();

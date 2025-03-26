@@ -22,7 +22,7 @@ class UserSeeder extends Seeder
             'is_verified' => true,
             'suspended' => false,
             'role_id' => 5,  // Assigning the 'admin' role (role_id = 5)
-            'avatar' => '',
+            // 'avatar' => '/images/avatars/avatar-1.png',
         ]);
 
         User::factory()->create([
@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
             'is_verified' => true,
             'suspended' => false,
             'role_id' => 2,  // Assigning the 'instructor' role (role_id = 2)
-            'avatar' => '',
+            // 'avatar' => '',
         ]);
 
         User::factory()->create([
@@ -52,10 +52,10 @@ class UserSeeder extends Seeder
             'is_verified' => true,
             'suspended' => false,
             'role_id' => 1,  // Assigning the 'client' role (role_id = 1)
-            'avatar' => '',
+            // 'avatar' => '',
         ]);
 
         // Create 10 users
-        User::factory(4)->create();
+        User::factory(5)->create();
     }
 }

@@ -24,6 +24,20 @@ class Course extends Model
         'description',
         'about',
         'discussion_group_url',
+        'skill_level',
+        'is_free',
+        'total_lectures',
+        'lecture_length',
+        'total_quizzes',
+        'total_assignments',
+        'total_resources',
+        'language',
+        'is_captions',
+        'is_certificate',
+        'is_quiz',
+        'is_assignment',
+        'table_of_content',
+
         'status',
         'is_finished',
         // 'enrolled_students_count',
@@ -36,11 +50,13 @@ class Course extends Model
         'rating',
     ];
 
+    // add a cast so that Laravel automatically decodes the JSON from the database into an array.
     protected $casts = [
         'prerequisites' => 'array',
         'tags' => 'array',
         'visibility' => 'boolean',
         // 'featured' => 'boolean',
+        'table_of_content' => 'array',
         'allow_waitlist' => 'boolean',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
@@ -49,6 +65,12 @@ class Course extends Model
     /**
      * Relationships
      */
+
+     public function enrollments()
+    {
+        return $this->hasMany(CourseEnrollment::class);
+    }
+
 
     public function students()
     {

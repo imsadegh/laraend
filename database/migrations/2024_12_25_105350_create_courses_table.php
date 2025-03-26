@@ -28,6 +28,21 @@ return new class extends Migration {
             $table->string('discussion_group_url')->nullable();
             $table->boolean('is_finished')->default(false);
             $table->integer('enrolled_students_count')->default(0);
+            $table->enum('skill_level', ['beginner', 'intermediate', 'advanced'])->nullable();
+            $table->boolean('is_free')->default(false);
+            $table->integer('total_lectures')->nullable();
+
+            $table->integer('lecture_length')->nullable();
+            $table->integer('total_quizzes')->nullable();
+            $table->integer('total_assignments')->nullable();
+            $table->integer('total_resources')->nullable();
+            $table->enum('language',['en','fr','ar','fa'] )->default('fa');
+            $table->boolean('is_captions')->default(false);
+            $table->boolean('is_certificate')->default(false);
+            $table->boolean('is_quiz')->default(false);
+            $table->boolean('is_assignment')->default(false);
+            $table->json('table_of_content')->nullable();
+
             $table->boolean('allow_waitlist')->default(false); // If waitlist is allowed when full
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();

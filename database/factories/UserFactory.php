@@ -40,15 +40,19 @@ class UserFactory extends Factory
             'username' => $this->faker->unique()->userName(),
             'email' => $this->faker->unique()->safeEmail(),
             'phone_number' => '09' . $this->faker->numerify('#########'),
+            'melli_code' => $this->faker->unique()->numerify('##########'),
+            'birth_date' => $this->faker->dateTimeBetween('-60 years', '-18 years'),
+            // 'position_title' => $this->faker->jobTitle(),
+            'position_title' => \Faker\Factory::create('en_US')->jobTitle(),
             'sex' => $this->faker->randomElement(['male', 'female', 'other']),
             'address' => $this->faker->address(),
             'city' => $this->faker->city(),
             'zip_code' => $this->faker->postcode(),
-            'avatar' => $this->faker->imageUrl(),  // You can customize this or use default placeholders
+            'avatar' => '/src/assets/images/avatars/avatar-' . $this->faker->numberBetween(1, 15) . '.png',
             'is_verified' => $this->faker->boolean(),
             'suspended' => $this->faker->boolean(),
             'email_verified_at' => $this->faker->boolean() ? $this->faker->dateTimeThisYear() : null,
-            'password' => bcrypt('password'),  // You can adjust the default password here
+            'password' => bcrypt('Sadegh@123'),  // You can adjust the default password here
             'remember_token' => \Str::random(10),
         ];
     }

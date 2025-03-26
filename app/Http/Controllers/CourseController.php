@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use Illuminate\Support\Facades\Validator; // Add this line
 use Illuminate\Http\JsonResponse;
+use App\Models\CourseEnrollment;
 
 // todo - Customize validation error messages if needed by passing a third parameter to the validate method.
 // todo - Use $hidden or $appends in the Course model to control the serialized response.
@@ -35,18 +36,36 @@ class CourseController extends Controller
 
     public function show($id)
     {
-        $course = Course::find($id);
-
+        // Eager load instructor to have their data available
+        $course = Course::with('instructor')->find($id);
         if (!$course) {
             return response()->json(['message' => 'Course not found'], 404);
         }
 
-        // Ensure only the assigned instructor or an admin can fetch this course
-        if ($course->instructor_id != auth()->id() && auth()->user()->role->name !== 'admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        $user = auth()->user();
+
+        // If the user is an admin or the assigned instructor, return full details
+        if ($user->role->name === 'admin' || $course->instructor_id == $user->id) {
+            return response()->json($course);
         }
 
-        return response()->json($course);
+        // Otherwise, assume the user is a student. Check enrollment with status "enrolled"
+        $enrollment = CourseEnrollment::where('course_id', $id)
+            ->where('user_id', $user->id)
+            ->where('status', 'enrolled')
+            ->first();
+
+        if (!$enrollment) {
+            return response()->json(['message' => 'Unauthorized. You are not enrolled in this course.'], 403);
+        }
+
+        // Return only a subset of fields for a student
+        $courseData = (array) $course->only(['course_name', 'description', 'about', 'discussion_group_url', 'enrolled_students_count', 'skill_level', 'total_lectures', 'lecture_length', 'language', 'is_captions', 'table_of_content', 'thumbnail_url']);
+        $instructor = $course->instructor;
+        $courseData['instructor_name'] = $instructor ? trim($instructor->first_name . ' ' . $instructor->last_name) : null;
+        $courseData['instructor_pfp'] = $instructor ? $instructor->avatar : null;
+
+        return response()->json($courseData);
     }
 
     public function store(Request $request)
@@ -82,6 +101,19 @@ class CourseController extends Controller
             'about'         => 'nullable|string',
             'discussion_group_url' => 'nullable|string',
             'status'        => 'in:active,archived,draft',
+            'skill_level'   => 'in:beginner,intermediate,advanced',
+            'is_free'       => 'boolean',
+            'total_lectures' => 'nullable|integer|min:1',
+            'lecture_length' => 'nullable|integer|min:1',
+            'total_quizzes'  => 'nullable|integer|min:1',
+            'total_assignments' => 'nullable|integer|min:1',
+            'total_resources'   => 'nullable|integer|min:1',
+            'language'      => 'in:en,fr,ar,fa',
+            'is_captions'      => 'boolean',
+            'is_certificate'   => 'boolean',
+            'is_quiz'          => 'boolean',
+            'is_assignment'    => 'boolean',
+            'table_of_content' => 'nullable|array',
             'allow_waitlist' => 'boolean',
             'start_date'    => 'nullable|date', // 2025-01-01T00:00:00.000Z  Thu Jan 30 2025 00:00:00 GMT+0330 (Iran Standard Time)
             'end_date'      => 'nullable|date|after_or_equal:start_date',
@@ -155,6 +187,56 @@ class CourseController extends Controller
 
         return response()->json($courses);
     }
+
+    public function getEnrolledCourses(Request $request)
+    {
+        // Assuming CourseEnrollment model has a relation 'course' that returns the course details.
+        $enrollments = CourseEnrollment::with('course')
+            ->where('user_id', auth()->id())
+            ->get();
+
+        // Map enrollments to extract course details
+        // $courses = $enrollments->map(function ($enrollment) {
+        //     return $enrollment->course;
+        // });
+
+        // Map each enrollment to include its status and a flag to allow redirection only if enrolled.
+        $courses = $enrollments->map(function ($enrollment) {
+            $course = $enrollment->course;
+            if (!$course) {
+                return null;
+            }
+            // Attach enrollment status and a redirection flag to the course object.
+            $course->enrollment_status = $enrollment->status ?? 'pending';
+            $course->can_redirect = ($course->enrollment_status === 'enrolled');
+
+            return $course;
+        })->filter()->values(); // Remove any null entries
+
+        return response()->json([
+            'courses' => $courses,
+            'total' => $courses->count()
+        ]);
+    }
+
+    // public function getCourseById($id)
+    // {
+    //     // Check that the authenticated student is enrolled in this course
+    //     $enrollment = CourseEnrollment::where('course_id', $id)
+    //     ->where('user_id', auth()->id())
+    //     ->where('status', 'enrolled')
+    //     ->first();
+
+    // if (!$enrollment) {
+    //     return response()->json(['message' => 'You are not enrolled in this course.'], 403);
+    // }
+
+    // $course = Course::with(['instructor', 'category'])->find($id);
+    // if (!$course) {
+    //     return response()->json(['message' => 'Course not found'], 404);
+    // }
+    // return response()->json($course);
+    // }
 
     public function getPrerequisites(): JsonResponse
     {
