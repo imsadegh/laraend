@@ -8,6 +8,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\AssignmentSubmissionController;
 use App\Http\Controllers\TuitionController;
 use App\Http\Controllers\CourseEnrollmentController;
 
@@ -50,6 +51,10 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
 
+    Route::post('/assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store'])
+         ->where('assignment', '[0-9]+');
+    Route::get('/courses/{course}/assignments', [AssignmentController::class, 'getCourseAssignments'])
+    ->where('course', '[0-9]+');
 });
 
 // Tuition Payment

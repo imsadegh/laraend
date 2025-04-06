@@ -13,7 +13,7 @@ class CategorySeeder extends Seeder
         // Clear the table
         DB::table('categories')->truncate();
 
-        // Example category data
+        // note: Also check the LmsMyCourses.vue file for changing the tags
         $categories = [
             ['name' => 'فناوری', 'parent_category_id' => null],
             ['name' => 'برنامه نویسی', 'parent_category_id' => 1], // Subcategory of 'Technology'

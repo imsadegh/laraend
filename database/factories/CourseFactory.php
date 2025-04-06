@@ -41,7 +41,7 @@ class CourseFactory extends Factory
             'is_certificate' => $this->faker->boolean(),
             'is_quiz' => $this->faker->boolean(),
             'is_assignment' => $this->faker->boolean(),
-            'table_of_content' => json_encode($this->faker->words(5)),
+            // 'table_of_content' => json_encode($this->faker->words(5)),
             'status' => $this->faker->randomElement(['active', 'archived', 'draft']),
             'is_finished' => $this->faker->boolean(),
             'enrolled_students_count' => $this->faker->numberBetween(0, 100),
