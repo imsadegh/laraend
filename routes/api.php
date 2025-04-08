@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OTPVerificationController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseModuleController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AssignmentController;
@@ -33,6 +34,20 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/instructor/courses', [CourseController::class, 'getInstructorCourses']);
     Route::get('/student/courses', [CourseController::class, 'getEnrolledCourses']);
     // Route::get('/courses/{id}', [CourseController::class, 'getCourseById']);
+});
+
+// Course Module Management
+Route::middleware('auth:api')->group(function () {
+    Route::get('/courses/{course}/modules', [CourseModuleController::class, 'index'])
+         ->where('course', '[0-9]+');
+    Route::post('/courses/{course}/modules', [CourseModuleController::class, 'store'])
+         ->where('course', '[0-9]+');
+    Route::get('/modules/{module}', [CourseModuleController::class, 'show'])
+         ->where('module', '[0-9]+');
+    Route::put('/modules/{module}', [CourseModuleController::class, 'update'])
+         ->where('module', '[0-9]+');
+    Route::delete('/modules/{module}', [CourseModuleController::class, 'destroy'])
+         ->where('module', '[0-9]+');
 });
 
 // Instructor, Categories, and Prerequisites

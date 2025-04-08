@@ -136,6 +136,7 @@ class CourseController extends Controller
         return response()->json([
             'message' => 'Course created successfully.',
             'course' => $course,
+            'course_id' => $course->id,
         ], 201);
     }
 
