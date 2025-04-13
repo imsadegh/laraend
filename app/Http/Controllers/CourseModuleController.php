@@ -19,8 +19,10 @@ class CourseModuleController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'type' => 'required|in:video,article,quiz,assignment',
+            'type' => 'required|in:video,article',
             'content_url' => 'nullable|string',
+            'description' => 'nullable|string',
+            'article_content' => 'nullable|string',
             'module_data' => 'nullable|json',
             'position' => 'nullable|integer',
             'visible' => 'boolean',
@@ -30,7 +32,7 @@ class CourseModuleController extends Controller
             'view_count' => 'nullable|integer',
             'prerequisite_modules' => 'nullable|json',
             'rating' => 'nullable|numeric|min:0|max:5',
-            'slug' => 'nullable|string|unique:course_modules,slug',
+            // 'slug' => 'nullable|string|unique:course_modules,slug',
             'created_by' => 'required|exists:users,id',
         ]);
 
@@ -63,8 +65,10 @@ class CourseModuleController extends Controller
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
-            'type' => 'sometimes|required|in:video,article,quiz,assignment',
+            'type' => 'sometimes|required|in:video,article',
             'content_url' => 'nullable|string',
+            'description' => 'nullable|string',
+            'article_content' => 'nullable|string',
             'module_data' => 'nullable|json',
             'position' => 'nullable|integer',
             'visible' => 'sometimes|boolean',
@@ -74,7 +78,7 @@ class CourseModuleController extends Controller
             'view_count' => 'nullable|integer',
             'prerequisite_modules' => 'nullable|json',
             'rating' => 'nullable|numeric|min:0|max:5',
-            'slug' => 'nullable|string|unique:course_modules,slug,' . $module->id,
+            // 'slug' => 'nullable|string|unique:course_modules,slug,' . $module->id,
         ]);
 
         $module->update($validated);

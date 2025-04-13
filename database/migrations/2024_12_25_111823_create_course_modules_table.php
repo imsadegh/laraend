@@ -17,8 +17,10 @@ return new class extends Migration {
 
             // Module classification and content
             $table->string('title');
-            $table->enum('type', ['video', 'article', 'quiz', 'assignment'])->default('article');
+            $table->enum('type', ['video', 'article'])->default('article');
             $table->text('content_url')->nullable(); // URL or path to the content
+            $table->text('description')->nullable();
+            $table->text('article_content')->nullable();
             $table->json('module_data')->nullable(); // Additional metadata (e.g., duration, requirements)
 
             // Module ordering & visibility
@@ -38,7 +40,7 @@ return new class extends Migration {
             $table->decimal('rating', 3, 2)->default(0)->comment('Average module rating, e.g., 0.00 to 5.00');
 
             // Unique slug
-            $table->string('slug')->unique()->nullable(); // Unique slug for module identification
+            // $table->string('slug')->unique()->nullable(); // Unique slug for module identification
 
             $table->timestamps();
             $table->softDeletes();

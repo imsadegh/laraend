@@ -15,6 +15,8 @@ class CourseModule extends Model
         'title',
         'type',
         'content_url',
+        'description',
+        'article_content',
         'module_data',
         'position',
         'visible',
@@ -24,7 +26,7 @@ class CourseModule extends Model
         'view_count',
         'prerequisite_modules',
         'rating',
-        'slug',
+        // 'slug',
     ];
 
     protected $casts = [

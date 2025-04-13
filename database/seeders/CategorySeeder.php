@@ -15,13 +15,13 @@ class CategorySeeder extends Seeder
 
         // note: Also check the LmsMyCourses.vue file for changing the tags
         $categories = [
-            ['name' => 'فناوری', 'parent_category_id' => null],
-            ['name' => 'برنامه نویسی', 'parent_category_id' => 1], // Subcategory of 'Technology'
-            ['name' => 'توسعه وب', 'parent_category_id' => 2], // Subcategory of 'Programming'
-            ['name' => 'سلامت و ورزش', 'parent_category_id' => null],
-            ['name' => 'رژیم', 'parent_category_id' => 4], // Subcategory of 'Health & Fitness'
-            ['name' => 'سبک زندگی', 'parent_category_id' => null],
-            ['name' => 'عکاسی', 'parent_category_id' => 6], // Subcategory of 'Lifestyle'
+            ['name' => 'مبانی متافیزیک اسلامی', 'parent_category_id' => null, 'description' => 'شامل شناخت هستی، رابطه روح و بدن، مراتب وجود، و مفاهیم انرژی در نگاه دینی.'],
+            ['name' => 'دعا درمانی و شفای روح', 'parent_category_id' => 1, 'description' => 'آموزش کاربردی دعاها، آداب دعا، اثرات روحی و جسمی ادعیه، و شفای امراض از منظر دینی.'],
+            ['name' => 'اذکار، اسماء الهی و کاربرد آن‌ها', 'parent_category_id' => 2, 'description' => 'شناخت اسماء حسنی، ذکر درمانی، تنظیم برنامه ذکر روزانه، و تأثیر آن‌ها بر روح و جسم.'],
+            ['name' => 'تعادل انرژی و پاک‌سازی روحی', 'parent_category_id' => null, 'description' => 'موضوعاتی مانند چاکرا از نگاه اسلامی، وضو، غسل، نماز و اثرات پاک‌کنندگی اعمال عبادی.'],
+            ['name' => 'حفاظت روحی و باطنی', 'parent_category_id' => 4, 'description' => 'روش‌های مقابله با انرژی‌های منفی، چشم زخم، سحر و جن، با استفاده از آیات و ادعیه مأثور.'],
+            ['name' => 'ارتباط با عوالم معنوی', 'parent_category_id' => null, 'description' => 'تفسیر خواب، رؤیاهای صادقه، حالات مکاشفه، و آداب سیر و سلوک باطنی.'],
+            ['name' => 'آداب زندگی متافیزیکی در سبک اسلامی', 'parent_category_id' => 6, 'description' => 'تنظیم سبک زندگی مبتنی بر معرفت باطنی: تغذیه، خواب، سخن گفتن، حضور قلب و سبک پوشش.'],
         ];
 
         // Insert data into the 'categories' table

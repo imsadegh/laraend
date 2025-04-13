@@ -11,7 +11,7 @@ class CategoryController extends Controller
 {
     public function index(): JsonResponse
     {
-        $categories = Category::select('id', 'name')
+        $categories = Category::select('id', 'name', 'description')
             ->orderBy('name')
             ->get();
 

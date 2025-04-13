@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->id(); // Primary Key
             $table->string('name')->unique(); // Category name
+            $table->text('description')->nullable(); // Category description
 
             // Self-referential foreign key for subcategories (nullable for top-level categories)
             $table->foreignId('parent_category_id')->nullable()->constrained('categories')->nullOnDelete();
