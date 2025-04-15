@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
 use App\Models\Course;
 use Illuminate\Http\Request;
 
@@ -31,22 +32,22 @@ class AssignmentController extends Controller
 
         // method 3:
         $assignments = Assignment::with('course') // Assuming `course` is the relation on the Assignment model
-        ->whereHas('course', function($query) {
-            $query->where('instructor_id', auth()->id());
-        })
-        ->get()
-        ->map(function($assignment) {
-            return [
-                'id' => $assignment->id,
-                'title' => $assignment->title,
-                'description' => $assignment->description,
-                'submission_deadline' => $assignment->submission_deadline,
-                'max_score' => $assignment->max_score,
-                'course_name' => $assignment->course->course_name, // Add course name
-                'visible' => $assignment->visible,
-                'type' => $assignment->type,
-            ];
-        });
+            ->whereHas('course', function ($query) {
+                $query->where('instructor_id', auth()->id());
+            })
+            ->get()
+            ->map(function ($assignment) {
+                return [
+                    'id' => $assignment->id,
+                    'title' => $assignment->title,
+                    'description' => $assignment->description,
+                    'submission_deadline' => $assignment->submission_deadline,
+                    'max_score' => $assignment->max_score,
+                    'course_name' => $assignment->course->course_name, // Add course name
+                    'visible' => $assignment->visible,
+                    'type' => $assignment->type,
+                ];
+            });
 
         return response()->json($assignments);
     }
@@ -58,6 +59,19 @@ class AssignmentController extends Controller
         if (!$assignment) {
             return response()->json(['message' => 'Assignment not found'], 404);
         }
+
+        // For student users, return assignment details along with their submission (if any)
+        if (auth()->user()->role->name === 'student') {
+            $submission = AssignmentSubmission::where('assignment_id', $id)
+                ->where('user_id', auth()->id())
+                ->first();
+            return response()->json([
+                'assignment' => $assignment,
+                'submission' => $submission
+            ]);
+        }
+
+        // For other roles, return the full assignment details
         return response()->json($assignment);
     }
 
@@ -76,20 +90,20 @@ class AssignmentController extends Controller
         }
 
         $validated = $request->validate([
-            'title'                 => 'required|string|max:255',
-            'description'           => 'nullable|string',
-            'submission_deadline'   => 'nullable|date',
-            'requirements'          => 'nullable|json',
-            'max_score'             => 'required|numeric|min:0|max:100',
-            'is_active'             => 'boolean',
-            'type'                  => 'required|in:individual,group',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'submission_deadline' => 'nullable|date',
+            'requirements' => 'nullable|json',
+            'max_score' => 'required|numeric|min:0|max:100',
+            'is_active' => 'boolean',
+            'type' => 'required|in:individual,group',
             'allow_late_submission' => 'boolean',
-            'visible'               => 'required|boolean',
+            'visible' => 'required|boolean',
             'late_submission_penalty' => 'nullable|integer|min:0|max:100',
-            'resources'             => 'nullable|json',
-            'revision_limit'        => 'integer|min:1',
-            'published_at'          => 'nullable|date',
-            'last_submission_at'    => 'nullable|date|after_or_equal:submission_deadline',
+            'resources' => 'nullable|json',
+            'revision_limit' => 'integer|min:1',
+            'published_at' => 'nullable|date',
+            'last_submission_at' => 'nullable|date|after_or_equal:submission_deadline',
         ]);
 
         // $assignment = Assignment::create([
@@ -159,42 +173,42 @@ class AssignmentController extends Controller
     }
 
     public function getCourseAssignments($courseId)
-{
-    // Find the course by ID
-    $course = Course::find($courseId);
-    if (!$course) {
-        return response()->json(['message' => 'Course not found'], 404);
+    {
+        // Find the course by ID
+        $course = Course::find($courseId);
+        if (!$course) {
+            return response()->json(['message' => 'Course not found'], 404);
+        }
+
+        // Ensure the authenticated student is enrolled in this course with status "enrolled"
+        $enrollment = \App\Models\CourseEnrollment::where('course_id', $courseId)
+            ->where('user_id', auth()->id())
+            ->where('status', 'enrolled')
+            ->first();
+        if (!$enrollment) {
+            return response()->json(['message' => 'Unauthorized. You are not enrolled in this course.'], 403);
+        }
+
+        // Fetch assignments for the course
+        $assignments = Assignment::where('course_id', $courseId)
+            ->where('visible', true)
+            ->get();
+
+        // Optionally, return only a subset of fields:
+        $assignments = $assignments->map(function ($assignment) {
+            return [
+                'id' => $assignment->id,
+                'title' => $assignment->title,
+                'description' => $assignment->description,
+                'submission_deadline' => $assignment->submission_deadline,
+                'max_score' => $assignment->max_score,
+                'visible' => $assignment->visible,
+                'type' => $assignment->type,
+                'is_active' => $assignment->is_active,
+            ];
+        });
+
+        return response()->json($assignments);
     }
-
-    // Ensure the authenticated student is enrolled in this course with status "enrolled"
-    $enrollment = \App\Models\CourseEnrollment::where('course_id', $courseId)
-        ->where('user_id', auth()->id())
-        ->where('status', 'enrolled')
-        ->first();
-    if (!$enrollment) {
-        return response()->json(['message' => 'Unauthorized. You are not enrolled in this course.'], 403);
-    }
-
-    // Fetch assignments for the course
-    $assignments = Assignment::where('course_id', $courseId)
-                   ->where('visible', true)
-                   ->get();
-
-    // Optionally, return only a subset of fields:
-    $assignments = $assignments->map(function ($assignment) {
-        return [
-            'id' => $assignment->id,
-            'title' => $assignment->title,
-            'description' => $assignment->description,
-            'submission_deadline' => $assignment->submission_deadline,
-            'max_score' => $assignment->max_score,
-            'visible' => $assignment->visible,
-            'type' => $assignment->type,
-            'is_active' => $assignment->is_active,
-        ];
-    });
-
-    return response()->json($assignments);
-}
 
 }

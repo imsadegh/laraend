@@ -49,7 +49,7 @@ class AssignmentSubmissionController extends Controller
             ->first();
 
         if ($existingSubmission) {
-            if ($existingSubmission->feedback) {
+            if ($existingSubmission->feedback || $existingSubmission->score !== null) {
                 return response()->json([
                     'message' => 'This assignment has already been reviewed. Submission is locked.'
                 ], 403);

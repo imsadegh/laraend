@@ -39,15 +39,15 @@ Route::middleware('auth:api')->group(function () {
 // Course Module Management
 Route::middleware('auth:api')->group(function () {
     Route::get('/courses/{course}/modules', [CourseModuleController::class, 'index'])
-         ->where('course', '[0-9]+');
+        ->where('course', '[0-9]+');
     Route::post('/courses/{course}/modules', [CourseModuleController::class, 'store'])
-         ->where('course', '[0-9]+');
+        ->where('course', '[0-9]+');
     Route::get('/modules/{module}', [CourseModuleController::class, 'show'])
-         ->where('module', '[0-9]+');
+        ->where('module', '[0-9]+');
     Route::put('/modules/{module}', [CourseModuleController::class, 'update'])
-         ->where('module', '[0-9]+');
+        ->where('module', '[0-9]+');
     Route::delete('/modules/{module}', [CourseModuleController::class, 'destroy'])
-         ->where('module', '[0-9]+');
+        ->where('module', '[0-9]+');
 });
 
 // Instructor, Categories, and Prerequisites
@@ -62,17 +62,19 @@ Route::middleware('auth:api')->group(function () {
     // Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
     Route::get('/instructor/assignments', [AssignmentController::class, 'index']);
     Route::post('/courses/{course}/assignments', [AssignmentController::class, 'store']);
-    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
+    // Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
+    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])
+        ->where('assignment', '[0-9]+');
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
 
     Route::post('/assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store'])
-         ->where('assignment', '[0-9]+');
+        ->where('assignment', '[0-9]+');
     Route::get('/instructor/assignment-submissions', [AssignmentSubmissionController::class, 'index']);
     Route::put('/instructor/assignment-submissions/{id}/review', [AssignmentSubmissionController::class, 'review']);
 
     Route::get('/courses/{course}/assignments', [AssignmentController::class, 'getCourseAssignments'])
-    ->where('course', '[0-9]+');
+        ->where('course', '[0-9]+');
 
 });
 
@@ -84,13 +86,13 @@ Route::middleware('auth:api')->group(function () {
 
 //
 Route::middleware(['auth:api', 'role:admin'])->group(function () {
-// Route::middleware('auth:api')->group(function () {
+    // Route::middleware('auth:api')->group(function () {
     // Enroll a student (already existing)
     Route::post('/admin/enrollments', [CourseEnrollmentController::class, 'enrollStudent']);
 
-     // New endpoints for admin enrollment management
-     Route::get('/admin/enrollments', [CourseEnrollmentController::class, 'index']);
-     Route::put('/admin/enrollments/{id}', [CourseEnrollmentController::class, 'update']);
+    // New endpoints for admin enrollment management
+    Route::get('/admin/enrollments', [CourseEnrollmentController::class, 'index']);
+    Route::put('/admin/enrollments/{id}', [CourseEnrollmentController::class, 'update']);
 });
 
 // Route::fallback(function () {
