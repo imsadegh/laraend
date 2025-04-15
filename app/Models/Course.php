@@ -107,4 +107,10 @@ class Course extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
+
 }

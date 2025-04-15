@@ -26,7 +26,7 @@ class AssignmentSubmission extends Model
     ];
 
     protected $casts = [
-        'feedback' => 'array',
+        // 'feedback' => 'array',
         'metadata' => 'array',
     ];
 
@@ -41,5 +41,11 @@ class AssignmentSubmission extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function reviewedBy()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
 
 }

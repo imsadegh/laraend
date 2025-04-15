@@ -68,8 +68,12 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store'])
          ->where('assignment', '[0-9]+');
+    Route::get('/instructor/assignment-submissions', [AssignmentSubmissionController::class, 'index']);
+    Route::put('/instructor/assignment-submissions/{id}/review', [AssignmentSubmissionController::class, 'review']);
+
     Route::get('/courses/{course}/assignments', [AssignmentController::class, 'getCourseAssignments'])
     ->where('course', '[0-9]+');
+
 });
 
 // Tuition Payment
