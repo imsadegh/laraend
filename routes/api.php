@@ -12,6 +12,10 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AssignmentSubmissionController;
 use App\Http\Controllers\TuitionController;
 use App\Http\Controllers\CourseEnrollmentController;
+use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ExamAttemptController;
+use App\Http\Controllers\ExamScoreController;
+
 
 Route::middleware(['auth:api'])->get('/user', function (Request $request) {
     return $request->user();
@@ -84,7 +88,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/tuition/summary', [TuitionController::class, 'summary']);
 });
 
-//
+// Course Enrollment
 Route::middleware(['auth:api', 'role:admin'])->group(function () {
     // Route::middleware('auth:api')->group(function () {
     // Enroll a student (already existing)
@@ -93,6 +97,27 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     // New endpoints for admin enrollment management
     Route::get('/admin/enrollments', [CourseEnrollmentController::class, 'index']);
     Route::put('/admin/enrollments/{id}', [CourseEnrollmentController::class, 'update']);
+});
+
+// Exams endpoints (for instructors to create, update, list, or delete exams)
+Route::middleware('auth:api')->group(function () {
+    Route::post('/exams', [ExamController::class, 'store']); // Create a new exam
+    Route::get('/exams', [ExamController::class, 'index']); // List all exams (optionally filter by course)
+    Route::get('/exams/{exam}', [ExamController::class, 'show']); // Get exam details
+    Route::put('/exams/{exam}', [ExamController::class, 'update']); // Update an exam
+    Route::delete('/exams/{exam}', [ExamController::class, 'destroy']); // Delete an exam
+
+    // Exam Attempt endpoints (for students starting/submitting an exam)
+    Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // Start a new exam attempt
+    Route::put('/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']); // Update an exam attempt (submit answers)
+    Route::get('/exam-attempts/{attempt}', [ExamAttemptController::class, 'show']); // Get details of an exam attempt
+
+    // Instructor Review endpoints (for instructors to review exam attempts)
+    Route::get('/instructor/exam-attempts', [ExamAttemptController::class, 'index']); // List exam attempts for courses taught by the instructor
+    Route::put('/exam-attempts/{attempt}/review', [ExamAttemptController::class, 'review']); // Review an exam attempt (assign score/feedback)
+
+    // Optionally, if you handle exam scores separately:
+    Route::get('/exam-scores', [ExamScoreController::class, 'index']); // List exam scores (if needed)
 });
 
 // Route::fallback(function () {

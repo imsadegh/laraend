@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->string('file_path')->nullable(); // File path or storage link
             $table->text('comments')->nullable(); // Comments from the student
             $table->decimal('score', 5, 2)->nullable();
+            $table->decimal('score_recommendations', 5, 2)->nullable();
             $table->integer('revision_number')->default(1); // Track how many times resubmitted
             $table->boolean('is_late')->default(false); // Whether the submission was late
             $table->text('feedback')->nullable(); // for Instructor/assistant feedback

@@ -40,11 +40,10 @@ return new class extends Migration
 
             // Timestamps for record
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['user_id', 'badge_id']);
 
-            // Optional soft deletes if you want to logically remove badge awards instead of permanent removal
-            $table->softDeletes();
 
             // Indexes for quicker lookups
             $table->index('user_id');

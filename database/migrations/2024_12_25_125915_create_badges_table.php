@@ -42,8 +42,6 @@ return new class extends Migration
 
             // Standard timestamps
             $table->timestamps();
-
-            // Optional: uncomment if you want logical deletion
             $table->softDeletes();
 
             // Indexes for performance

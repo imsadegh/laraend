@@ -30,7 +30,8 @@ return new class extends Migration {
             $table->json('certificate_data')->nullable();  // e.g., certificate ID, URL, or meta info
             $table->unique(['course_id', 'user_id']); // Ensure one enrollment record per course-user pair
 
-            $table->timestamps(); // created_at and updated_at
+            $table->timestamps();
+            $table->softDeletes();
 
             // indexes
             $table->index('status');

@@ -16,6 +16,7 @@ class AssignmentSubmission extends Model
         'file_path',
         'comments',
         'score',
+        'score_recommendations',
         'revision_number',
         'is_late',
         'feedback',

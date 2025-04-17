@@ -17,42 +17,45 @@ class CourseSeeder extends Seeder
             'about' => 'در این دوره مباحث پایه‌ای و ساخت کامپوننت آموزش داده می‌شود.',
 
             // [{"title":"مقدمه","status":"منتشر شده","time":"10:00","topics":[{"title":"ویو چیست؟","time":"5:00","isCompleted":false},{"title":"بررسی کلی پروژه","time":"5:00","isCompleted":false}]},{"title":"موضوعات پیشرفته","status":"پیش نویس","time":"20:00","topics":[{"title":"عمق واکنش پذیری","time":"10:00","isCompleted":false},{"title":"آپی ترکیبی","time":"10:00","isCompleted":false}]}]
-            'table_of_content' => json_encode([
-        [
-            'title' => 'مقدمه',
-            'status' => 'منتشر شده',
-            'time' => '10:00',
-            'topics' => [
-                [
-                    'title' => 'ویو چیست؟',
-                    'time' => '5:00',
-                    'isCompleted' => false,
-                ],
-                [
-                    'title' => 'بررسی کلی پروژه',
-                    'time' => '5:00',
-                    'isCompleted' => false,
-                ],
-            ],
-                ],
-                [
-                    'title' => 'موضوعات پیشرفته',
-                    'status' => 'پیش نویس',
-                    'time' => '20:00',
-                    'topics' => [
-                        [
-                            'title' => 'عمق واکنش پذیری',
-                            'time' => '10:00',
-                            'isCompleted' => false,
-                        ],
-                        [
-                            'title' => 'آپی ترکیبی',
-                            'time' => '10:00',
-                            'isCompleted' => false,
-                        ],
-                    ],
-                ],
-            ], JSON_UNESCAPED_UNICODE),
+
+        //     'table_of_content' => json_encode([
+        // [
+        //     'title' => 'مقدمه',
+        //     'status' => 'منتشر شده',
+        //     'time' => '10:00',
+        //     'topics' => [
+        //         [
+        //             'title' => 'ویو چیست؟',
+        //             'time' => '5:00',
+        //             'isCompleted' => false,
+        //         ],
+        //         [
+        //             'title' => 'بررسی کلی پروژه',
+        //             'time' => '5:00',
+        //             'isCompleted' => false,
+        //         ],
+        //     ],
+        //         ],
+        //         [
+        //             'title' => 'موضوعات پیشرفته',
+        //             'status' => 'پیش نویس',
+        //             'time' => '20:00',
+        //             'topics' => [
+        //                 [
+        //                     'title' => 'عمق واکنش پذیری',
+        //                     'time' => '10:00',
+        //                     'isCompleted' => false,
+        //                 ],
+        //                 [
+        //                     'title' => 'آپی ترکیبی',
+        //                     'time' => '10:00',
+        //                     'isCompleted' => false,
+        //                 ],
+        //             ],
+        //         ],
+        //     ], JSON_UNESCAPED_UNICODE),
+
+
             'instructor_id' => 2,
             'visibility' => 'true',
             'status' => 'active',
