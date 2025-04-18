@@ -15,7 +15,7 @@ class ExamAttemptController extends Controller
             return response()->json(['message' => 'Invalid exam ID'], 400);
         }
 
-        $exam = \App\Models\Exam::find($examId);
+        $exam = Exam::find($examId);
         if (!$exam) {
             return response()->json(['message' => 'Exam not found'], 404);
         }
@@ -37,14 +37,14 @@ class ExamAttemptController extends Controller
         }
 
         // Determine the next attempt number for this exam and student
-        $lastAttempt = \App\Models\ExamAttempt::where('exam_id', $examId)
+        $lastAttempt = ExamAttempt::where('exam_id', $examId)
             ->where('user_id', $user->id)
             ->orderBy('attempt_number', 'desc')
             ->first();
         $newAttemptNumber = $lastAttempt ? $lastAttempt->attempt_number + 1 : 1;
 
         // Create new exam attempt
-        $attempt = \App\Models\ExamAttempt::create([
+        $attempt = ExamAttempt::create([
             'exam_id' => $examId,
             'user_id' => $user->id,
             'attempt_number' => $newAttemptNumber,
@@ -60,7 +60,7 @@ class ExamAttemptController extends Controller
 
     public function update(Request $request, $attemptId)
     {
-        $attempt = \App\Models\ExamAttempt::find($attemptId);
+        $attempt = ExamAttempt::find($attemptId);
         if (!$attempt) {
             return response()->json(['message' => 'Exam attempt not found'], 404);
         }
@@ -71,7 +71,15 @@ class ExamAttemptController extends Controller
         }
 
         $validated = $request->validate([
-            'answers' => 'required|json',
+            // 'answers' => 'required|json',
+            'answers'                => 'required|array',
+            'answers.*.question_id'  => 'required|exists:questions,id',
+            'answers.*.answer_text'  => 'nullable|string',
+            'answers.*.selected_option' => 'nullable|string',
+            'answers.*.is_correct'   => 'boolean',
+            'answers.*.score_earned' => 'nullable|numeric',
+            'finished_at'            => 'nullable|date',
+            'is_submitted'           => 'boolean',
         ]);
 
         // Mark the attempt as submitted and record the finish time.
@@ -84,7 +92,10 @@ class ExamAttemptController extends Controller
         \App\Models\ExamAttemptAnswer::where('exam_attempt_id', $attempt->id)->delete();
 
         // Decode the answers JSON and create new answer records.
-        $answers = json_decode($validated['answers'], true);
+        // $answers = json_decode($validated['answers'], associative: true);
+        // We already have an array of answers
+        $answers = $validated['answers'];
+
         foreach ($answers as $answerData) {
             \App\Models\ExamAttemptAnswer::create([
                 'exam_attempt_id' => $attempt->id,
@@ -105,7 +116,7 @@ class ExamAttemptController extends Controller
 
     public function show($attemptId)
     {
-        $attempt = \App\Models\ExamAttempt::with(['exam', 'user', 'answers'])->find($attemptId);
+        $attempt = ExamAttempt::with(['exam', 'user', 'answers'])->find($attemptId);
         if (!$attempt) {
             return response()->json(['message' => 'Exam attempt not found'], 404);
         }
@@ -134,7 +145,7 @@ class ExamAttemptController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $attempts = \App\Models\ExamAttempt::with(['exam', 'user', 'exam.course'])
+        $attempts = ExamAttempt::with(['exam', 'user', 'exam.course'])
             ->whereHas('exam.course', function ($query) use ($user) {
                 $query->where('instructor_id', $user->id);
             })

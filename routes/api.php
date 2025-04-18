@@ -63,10 +63,9 @@ Route::middleware('auth:api')->group(function () {
 
 // Assignments Management
 Route::middleware('auth:api')->group(function () {
+    Route::post('/courses/{course}/assignments', [AssignmentController::class, 'store']);
     // Route::get('/courses/{course}/assignments', [AssignmentController::class, 'index']);
     Route::get('/instructor/assignments', [AssignmentController::class, 'index']);
-    Route::post('/courses/{course}/assignments', [AssignmentController::class, 'store']);
-    // Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])
         ->where('assignment', '[0-9]+');
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
@@ -79,7 +78,6 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/courses/{course}/assignments', [AssignmentController::class, 'getCourseAssignments'])
         ->where('course', '[0-9]+');
-
 });
 
 // Tuition Payment
@@ -107,13 +105,13 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/exams/{exam}', [ExamController::class, 'update']); // Update an exam
     Route::delete('/exams/{exam}', [ExamController::class, 'destroy']); // Delete an exam
 
-    // Exam Attempt endpoints (for students starting/submitting an exam)
-    Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // Start a new exam attempt
-    Route::put('/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']); // Update an exam attempt (submit answers)
+    Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // for students starting/submitting an exam
+    Route::get('/instructor/exam-attempts', [ExamAttemptController::class, 'index']); // List exam attempts for courses taught by the instructor
     Route::get('/exam-attempts/{attempt}', [ExamAttemptController::class, 'show']); // Get details of an exam attempt
 
-    // Instructor Review endpoints (for instructors to review exam attempts)
-    Route::get('/instructor/exam-attempts', [ExamAttemptController::class, 'index']); // List exam attempts for courses taught by the instructor
+    // Route::put('/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']); // Update an exam attempt (submit answers)
+    Route::match(['put','patch'], '/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']);
+
     Route::put('/exam-attempts/{attempt}/review', [ExamAttemptController::class, 'review']); // Review an exam attempt (assign score/feedback)
 
     // Optionally, if you handle exam scores separately:
