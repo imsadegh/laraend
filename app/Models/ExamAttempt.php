@@ -10,14 +10,12 @@ class ExamAttempt extends Model
         'exam_id',
         'user_id',
         'attempt_number',
-        // 'score_total',
         'started_at',
         'finished_at',
         'is_submitted',
     ];
 
     protected $casts = [
-        // 'score_total'    => 'decimal:2',
         'attempt_number' => 'integer',
         'started_at'     => 'datetime',
         'finished_at'    => 'datetime',

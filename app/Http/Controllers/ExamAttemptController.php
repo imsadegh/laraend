@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
-
+use App\Models\ExamAttemptAnswer;
 
 class ExamAttemptController extends Controller
 {
@@ -66,51 +66,29 @@ class ExamAttemptController extends Controller
         }
 
         $user = auth()->user();
+
+        // Only the owner can submit their attempt
         if ($attempt->user_id !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        // Only expect an “is_submitted” flag (and optional finished_at override)
         $validated = $request->validate([
-            // 'answers' => 'required|json',
-            'answers'                => 'required|array',
-            'answers.*.question_id'  => 'required|exists:questions,id',
-            'answers.*.answer_text'  => 'nullable|string',
-            'answers.*.selected_option' => 'nullable|string',
-            'answers.*.is_correct'   => 'boolean',
-            'answers.*.score_earned' => 'nullable|numeric',
-            'finished_at'            => 'nullable|date',
-            'is_submitted'           => 'boolean',
+            'is_submitted' => 'required|boolean',
+            'finished_at' => 'nullable|date',
         ]);
 
-        // Mark the attempt as submitted and record the finish time.
-        $attempt->update([
-            'is_submitted' => true,
-            'finished_at' => now(),
-        ]);
-
-        // Clear any existing answers for this attempt.
-        \App\Models\ExamAttemptAnswer::where('exam_attempt_id', $attempt->id)->delete();
-
-        // Decode the answers JSON and create new answer records.
-        // $answers = json_decode($validated['answers'], associative: true);
-        // We already have an array of answers
-        $answers = $validated['answers'];
-
-        foreach ($answers as $answerData) {
-            \App\Models\ExamAttemptAnswer::create([
-                'exam_attempt_id' => $attempt->id,
-                'user_id' => $user->id,
-                'question_id' => $answerData['question_id'],
-                'answer_text' => $answerData['answer_text'] ?? null,
-                'selected_option' => $answerData['selected_option'] ?? null,
-                'is_correct' => $answerData['is_correct'] ?? false,
-                'score_earned' => $answerData['score_earned'] ?? null,
+        // If student is submitting, record finish time (or use now())
+        // if ($validated['is_submitted']) {
+            $attempt->update([
+                'is_submitted' => $validated['is_submitted'] ?? true,
+                'finished_at' => $validated['finished_at'] ?? now(),
             ]);
-        }
+        // }
 
         return response()->json([
-            'message' => 'Exam submitted successfully',
-            'attempt' => $attempt,
+            'message' => 'Exam attempt updated successfully.',
+            'attempt' => $attempt->fresh(),
         ]);
     }
 
@@ -163,7 +141,7 @@ class ExamAttemptController extends Controller
             'reviewed_by' => 'required|exists:users,id',
         ]);
 
-        $attempt = \App\Models\ExamAttempt::with('exam.course')->find($attemptId);
+        $attempt = ExamAttempt::with('exam.course')->find($attemptId);
         if (!$attempt) {
             return response()->json(['message' => 'Exam attempt not found'], 404);
         }

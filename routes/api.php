@@ -14,6 +14,7 @@ use App\Http\Controllers\TuitionController;
 use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamAttemptController;
+use App\Http\Controllers\ExamAttemptAnswerController;
 use App\Http\Controllers\ExamScoreController;
 
 
@@ -105,17 +106,21 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/exams/{exam}', [ExamController::class, 'update']); // Update an exam
     Route::delete('/exams/{exam}', [ExamController::class, 'destroy']); // Delete an exam
 
-    Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // for students starting/submitting an exam
+
+
+
+    // Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // for students starting/submitting an exam
     Route::get('/instructor/exam-attempts', [ExamAttemptController::class, 'index']); // List exam attempts for courses taught by the instructor
     Route::get('/exam-attempts/{attempt}', [ExamAttemptController::class, 'show']); // Get details of an exam attempt
+    Route::put('/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']); // Update an exam attempt (submit answers)
 
-    // Route::put('/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']); // Update an exam attempt (submit answers)
-    Route::match(['put','patch'], '/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']);
-
-    Route::put('/exam-attempts/{attempt}/review', [ExamAttemptController::class, 'review']); // Review an exam attempt (assign score/feedback)
-
+    Route::post('/exam-attempts/{attempt}/answers', [ExamAttemptAnswerController::class, 'store']);
+    // Route::put('/exam-attempts/{attempt}/review', [ExamAttemptController::class, 'review']); // rev an exam attempt (assign score/feedback)
     // Optionally, if you handle exam scores separately:
-    Route::get('/exam-scores', [ExamScoreController::class, 'index']); // List exam scores (if needed)
+    // Route::get('/exam-scores', [ExamScoreController::class, 'index']); // List exam scores (if needed)
+
+
+
 });
 
 // Route::fallback(function () {
