@@ -9,23 +9,22 @@ return new class extends Migration {
     {
         Schema::create('exam_questions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('exam_id')
-                ->constrained('exams')
-                ->onDelete('cascade');
-            $table->foreignId('question_id')
-                ->constrained('questions')
-                ->onDelete('cascade');
+            $table->foreignId('exam_id') ->constrained('exams') ->onDelete('cascade');
+            $table->foreignId('question_id') ->constrained('questions') ->onDelete('cascade');
 
             $table->integer('position')->nullable()->comment('Ordering in the exam');
             $table->boolean('is_required')->default(true)->comment('If question is mandatory');
             // You could store partial credit info or scoring weight here if needed:
             // $table->decimal('question_weight', 5, 2)->default(1.0);
 
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+
             $table->timestamps();
             $table->softDeletes();
 
             // If you don't want a question repeated in the same exam, add a unique constraint
-            $table->unique(['exam_id', 'question_id']);
+            $table->unique(['exam_id', 'question_id'], 'unique_exam_question');
+            $table->unique(['exam_id', 'position'], 'unique_exam_position');
         });
     }
 

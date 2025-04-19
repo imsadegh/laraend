@@ -6,7 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OTPVerificationController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseModuleController;
-use App\Http\Controllers\InstructorController;
+// use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AssignmentSubmissionController;
@@ -16,6 +16,8 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamAttemptController;
 use App\Http\Controllers\ExamAttemptAnswerController;
 use App\Http\Controllers\ExamScoreController;
+use App\Http\Controllers\ExamQuestionController;
+use App\Http\Controllers\QuestionController;
 
 
 Route::middleware(['auth:api'])->get('/user', function (Request $request) {
@@ -57,7 +59,7 @@ Route::middleware('auth:api')->group(function () {
 
 // Instructor, Categories, and Prerequisites
 Route::middleware('auth:api')->group(function () {
-    Route::get('/instructors', [InstructorController::class, 'index']);
+    Route::get('/instructors', [CourseController::class, 'getInstructorsNames']);
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/courses/prerequisites', [CourseController::class, 'getPrerequisites']);
 });
@@ -100,16 +102,22 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
 
 // Exams endpoints (for instructors to create, update, list, or delete exams)
 Route::middleware('auth:api')->group(function () {
-    Route::post('/exams', [ExamController::class, 'store']); // Create a new exam
-    Route::get('/exams', [ExamController::class, 'index']); // List all exams (optionally filter by course)
-    Route::get('/exams/{exam}', [ExamController::class, 'show']); // Get exam details
-    Route::put('/exams/{exam}', [ExamController::class, 'update']); // Update an exam
-    Route::delete('/exams/{exam}', [ExamController::class, 'destroy']); // Delete an exam
+    Route::apiResource('exams', ExamController::class);
+    //  GET    /exams   → index     | 	GET    /exams/{exam}    → show
+    //  POST   /exams   → store     |	PUT    /exams/{exam}   → update
+    //  DELETE /exams/{exam}   → destroy
+
+    Route::apiResource('questions', QuestionController::class);
+
+    Route::apiResource('exams.questions', ExamQuestionController::class)
+        ->parameters(['questions' => 'id']);
+    //  GET    /exams/{exam}/questions ➜ index     |  GET    /exams/{exam}/questions/{id} ➜ show
+    //  POST   /exams/{exam}/questions ➜ store     |  PUT    /exams/{exam}/questions/{id} ➜ update
+    //  DELETE /exams/{exam}/questions/{id} ➜ destroy
 
 
-
-
-    // Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // for students starting/submitting an exam
+    // only when the exam is active
+    Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // for students starting/submitting an exam
     Route::get('/instructor/exam-attempts', [ExamAttemptController::class, 'index']); // List exam attempts for courses taught by the instructor
     Route::get('/exam-attempts/{attempt}', [ExamAttemptController::class, 'show']); // Get details of an exam attempt
     Route::put('/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']); // Update an exam attempt (submit answers)
@@ -118,10 +126,9 @@ Route::middleware('auth:api')->group(function () {
     // Route::put('/exam-attempts/{attempt}/review', [ExamAttemptController::class, 'review']); // rev an exam attempt (assign score/feedback)
     // Optionally, if you handle exam scores separately:
     // Route::get('/exam-scores', [ExamScoreController::class, 'index']); // List exam scores (if needed)
-
-
-
 });
+
+
 
 // Route::fallback(function () {
 //     return response()->json(['message' => 'Route not found.'], 404);

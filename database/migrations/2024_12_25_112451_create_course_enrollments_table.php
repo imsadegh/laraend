@@ -28,6 +28,7 @@ return new class extends Migration {
             $table->integer('progress_percentage')->default(0); // 0–100 progress
             $table->decimal('final_score', 5, 2)->nullable(); // Course final score/grade
             $table->json('certificate_data')->nullable();  // e.g., certificate ID, URL, or meta info
+
             $table->unique(['course_id', 'user_id']); // Ensure one enrollment record per course-user pair
 
             $table->timestamps();

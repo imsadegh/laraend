@@ -29,10 +29,7 @@ return new class extends Migration {
             $table->enum('status', ['active', 'archived', 'draft'])->default('active');
             // $table->string('time_zone')->default('Asia/Tehran'); // Store time zone for the exam
 
-            // ??????????
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            // If the user is deleted, we set created_by = null
-            // (instead of cascade deleting the exam).
 
             $table->timestamps();
             $table->softDeletes();

@@ -15,12 +15,8 @@ return new class extends Migration
             $table->id(); // Primary Key
 
             // Foreign keys linking user -> badge
-            $table->foreignId('user_id')
-                    ->constrained('users')
-                    ->cascadeOnDelete();
-            $table->foreignId('badge_id')
-                    ->constrained('badges')
-                    ->cascadeOnDelete();
+            $table->foreignId('user_id') ->constrained('users') ->cascadeOnDelete();
+            $table->foreignId('badge_id') ->constrained('badges') ->cascadeOnDelete();
 
             // Track when this badge was awarded
             $table->timestamp('awarded_at')->useCurrent()

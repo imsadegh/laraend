@@ -11,12 +11,8 @@ return new class extends Migration {
             $table->id(); // Primary Key
 
             // Links to 'exams' and 'users'
-            $table->foreignId('exam_id')
-                ->constrained('exams')
-                ->cascadeOnDelete();
-            $table->foreignId('user_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
+            $table->foreignId('exam_id') ->constrained('exams') ->cascadeOnDelete();
+            $table->foreignId('user_id') ->constrained('users') ->cascadeOnDelete();
 
             // Core scoring fields
             $table->decimal('score', 5, 2)->nullable()
@@ -42,11 +38,8 @@ return new class extends Migration {
                 ->comment('Indicates if this record is for a re-exam attempt');
 
             // Reviewer reference (Instructor or assistant)
-            $table->foreignId('reviewed_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete()
-                ->comment('User ID of the person who reviewed/graded the exam');
+            $table->foreignId('reviewed_by') ->nullable() ->constrained('users')
+                ->nullOnDelete() ->comment('User ID of the person who reviewed/graded the exam');
 
             // Standard timestamps
             $table->timestamps();

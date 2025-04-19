@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['exam_id', 'user_id', 'attempt_number']);
+            $table->unique(['exam_id', 'user_id', 'attempt_number'], 'unique_exam_attempt');
         });
     }
 

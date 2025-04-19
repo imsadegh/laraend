@@ -31,10 +31,7 @@ return new class extends Migration
             $table->integer('level')->default(1);
 
             // Record who awarded the badge, if relevant
-            $table->foreignId('awarded_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+            $table->foreignId('awarded_by') ->nullable() ->constrained('users') ->nullOnDelete();
               // If the awarding user is deleted, we set this field to null
 
             // Track when the badge was awarded

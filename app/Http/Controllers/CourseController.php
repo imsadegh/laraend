@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Course;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator; // Add this line
 use Illuminate\Http\JsonResponse;
 use App\Models\CourseEnrollment;
@@ -259,5 +260,14 @@ class CourseController extends Controller
         sort($uniquePrerequisites);
 
         return response()->json($uniquePrerequisites, 200);
+    }
+
+    public function getInstructorsNames(): JsonResponse
+    {
+        $instructors = User::where('role_id', 2) // Assuming role_id 2 is for instructors
+            ->select('id', 'first_name', 'last_name')
+            ->get();
+
+        return response()->json($instructors, 200);
     }
 }

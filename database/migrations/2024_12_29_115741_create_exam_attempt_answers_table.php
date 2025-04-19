@@ -26,8 +26,7 @@ return new class extends Migration {
             $table->softDeletes();
 
             // If you want to enforce only 1 record of (exam_id, user_id, question_id) per attempt:
-            // $table->unique(['exam_id', 'user_id', 'question_id']);
-            $table->unique(['exam_attempt_id', 'user_id', 'question_id']);
+            $table->unique(['exam_attempt_id', 'user_id', 'question_id'], 'unique_exam_attempt_answer');
 
         });
     }

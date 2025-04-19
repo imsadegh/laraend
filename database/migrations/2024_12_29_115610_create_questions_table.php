@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->json('correct_answers')->nullable();
             // Could store correct options or short-answer solutions
             // You might add 'created_by' if you want to track question author
-            // $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();
