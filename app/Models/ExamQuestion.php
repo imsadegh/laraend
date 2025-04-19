@@ -16,6 +16,7 @@ class ExamQuestion extends Model
         'question_id',
         'position',
         'is_required',
+        'created_by',
     ];
 
     protected $casts = [
@@ -23,19 +24,18 @@ class ExamQuestion extends Model
         'is_required' => 'boolean',
     ];
 
-    /**
-     * The exam this question belongs to.
-     */
     public function exam()
     {
         return $this->belongsTo(Exam::class);
     }
 
-    /**
-     * The question attached to this exam.
-     */
     public function question()
     {
         return $this->belongsTo(Question::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

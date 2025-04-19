@@ -13,7 +13,7 @@ class CategorySeeder extends Seeder
         // Clear the table
         DB::table('categories')->truncate();
 
-        // note: Also check the LmsMyCourses.vue file for changing the tags
+        // todo: Also check the LmsMyCourses.vue file for changing the tags
         $categories = [
             ['name' => 'مبانی متافیزیک اسلامی', 'parent_category_id' => null, 'description' => 'شامل شناخت هستی، رابطه روح و بدن، مراتب وجود، و مفاهیم انرژی در نگاه دینی.'],
             ['name' => 'دعا درمانی و شفای روح', 'parent_category_id' => 1, 'description' => 'آموزش کاربردی دعاها، آداب دعا، اثرات روحی و جسمی ادعیه، و شفای امراض از منظر دینی.'],

@@ -32,7 +32,7 @@ Route::post('/otp/send', [OTPVerificationController::class, 'sendOTP']);
 Route::post('/otp/verify', [OTPVerificationController::class, 'verifyOTP']);
 
 // Course Management
-// Note: only admin and instructor can create, update, and delete courses
+// todo: only admin and instructor can create, update, and delete courses
 Route::middleware('auth:api')->group(function () {
     Route::post('/courses', [CourseController::class, 'store']);
     Route::get('/courses', [CourseController::class, 'index']);

@@ -87,7 +87,7 @@ class CourseController extends Controller
             return response()->json(['message' => 'Unauthorized, dear user!'], 403);
         }
 
-        // note - you may want to use the string fot the url if it fails
+        // todo - you may want to use the string for the url if it fails
         // Validate the request
         $validator = Validator::make($request->all(), [
             'course_name'   => 'required|string|max:255',

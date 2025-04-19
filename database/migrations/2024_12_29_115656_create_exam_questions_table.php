@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->foreignId('exam_id') ->constrained('exams') ->onDelete('cascade');
             $table->foreignId('question_id') ->constrained('questions') ->onDelete('cascade');
 
-            $table->integer('position')->nullable()->comment('Ordering in the exam');
+            $table->integer('position')->comment('Ordering in the exam');
             $table->boolean('is_required')->default(true)->comment('If question is mandatory');
             // You could store partial credit info or scoring weight here if needed:
             // $table->decimal('question_weight', 5, 2)->default(1.0);

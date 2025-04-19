@@ -14,10 +14,16 @@ class Question extends Model
         'type',
         'options',
         'correct_answers',
+        'created_by',
     ];
 
     protected $casts = [
         'options' => 'array',
         'correct_answers' => 'array',
     ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }

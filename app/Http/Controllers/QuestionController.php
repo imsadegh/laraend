@@ -35,6 +35,7 @@ class QuestionController extends Controller
             'correct_answers' => 'nullable|array',
             'correct_answers.*' => 'string',
         ]);
+        $v['created_by'] = auth()->id();
 
         $question = Question::create($v);
 
@@ -57,6 +58,8 @@ class QuestionController extends Controller
     {
         $this->ensureAdminOrInstructor();
         $q = Question::findOrFail($id);
+
+        // todo - merge these two:
         $v = $request->validate([
             'title' => 'nullable|string|max:255',
             'question_text' => 'required|string',
@@ -66,6 +69,8 @@ class QuestionController extends Controller
             'correct_answers' => 'nullable|array',
             'correct_answers.*' => 'string',
         ]);
+        $v['created_by'] = auth()->id();
+
         $q->update($v);
         return response()->json(['message' => 'Question updated', 'question' => $q]);
     }

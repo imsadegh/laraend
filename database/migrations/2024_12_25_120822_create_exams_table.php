@@ -14,10 +14,10 @@ return new class extends Migration {
 
             $table->string('name');
             $table->text('intro')->nullable(); // Introduction or description of the exam
-            $table->timestamp('time_open')->nullable();
-            $table->timestamp('time_close')->nullable();
-            $table->integer('time_limit')->nullable();
-            $table->integer('grade')->default(100); // Maximum grade (total score) for the exam
+            $table->timestamp('time_open');
+            // $table->timestamp('time_close')->nullable();
+            $table->integer('time_limit');
+            $table->integer('grade')->default(20); // Maximum grade (total score) for the exam
             $table->integer('questions_count')->default(0);
             $table->enum('exam_type', ['multiple_choice', 'short_answer', 'true_false', 'essay'])->default('multiple_choice');
             $table->boolean('shuffle_questions')->default(true);
