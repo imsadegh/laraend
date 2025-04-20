@@ -34,8 +34,8 @@ return new class extends Migration {
             $table->enum('refund_status', ['not_requested', 'requested', 'processed', 'denied'])->default('not_requested');
             $table->timestamp('last_refunded_at')->nullable(); // Timestamp when a refund is processed
 
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes for optimized querying
             $table->index('user_id');

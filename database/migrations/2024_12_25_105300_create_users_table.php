@@ -36,8 +36,8 @@ return new class extends Migration {
             $table->string('password');
             $table->rememberToken();
 
-            $table->softDeletes(); // creates 'deleted_at' column
             $table->timestamps(); // created_at and updated_at
+            $table->softDeletes(); // creates 'deleted_at' column
 
             // Indexes for optimized querying
             $table->index('username');

@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('name');
             $table->text('intro')->nullable(); // Introduction or description of the exam
             $table->timestamp('time_open');
-            // $table->timestamp('time_close')->nullable();
+            $table->timestamp('time_close');
             $table->integer('time_limit');
             $table->integer('grade')->default(20); // Maximum grade (total score) for the exam
             $table->integer('questions_count')->default(0);
@@ -26,7 +26,7 @@ return new class extends Migration {
             $table->boolean('feedback_enabled')->default(true);
             $table->integer('version')->default(1); // Version number for the exam (useful for tracking updates)
             $table->json('question_pool')->nullable(); // JSON to store random question pool if applicable
-            $table->enum('status', ['active', 'archived', 'draft'])->default('active');
+            $table->enum('status', ['active', 'inactive', 'draft'])->default('inactive');
             // $table->string('time_zone')->default('Asia/Tehran'); // Store time zone for the exam
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

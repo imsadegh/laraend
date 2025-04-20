@@ -31,8 +31,8 @@ return new class extends Migration {
             $table->timestamp('published_at')->nullable(); // When the assignment was published
             $table->timestamp('last_submission_at')->nullable(); // Last allowed submission time
 
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes
             $table->index('course_id');

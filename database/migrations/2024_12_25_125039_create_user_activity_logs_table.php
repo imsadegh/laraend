@@ -28,8 +28,6 @@ return new class extends Migration {
             $table->text('user_agent')->nullable();
             $table->timestamp('activity_time')->useCurrent();
 
-            $table->timestamps();
-
             $table->string('session_id')->nullable();
             $table->json('activity_metadata')->nullable(); // JSON for extra metadata
             $table->integer('duration_seconds')->nullable();
@@ -46,6 +44,8 @@ return new class extends Migration {
                 'content_interaction',
                 'other'
             ])->default('user_interaction');
+
+            $table->timestamps();
 
             // Indexes for frequent queries
             $table->index('user_id');

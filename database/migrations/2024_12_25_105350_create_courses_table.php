@@ -52,8 +52,8 @@ return new class extends Migration {
             // $table->float('rating')->default(0)->comment('Average course rating'); // Average rating
             $table->decimal('rating', 3, 2)->default(0)->comment('Average course rating from 0 to 5');
 
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes for optimized querying
             $table->index('course_name');

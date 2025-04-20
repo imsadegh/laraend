@@ -16,19 +16,29 @@ class ExamController extends Controller
 
         if ($user->role->name === 'admin') {
             // Admin: return all exams with course details.
-            $exams = Exam::with('course')->get();
+            $exams = Exam::with('course')->orderBy('created_at', 'desc')->get();
         } elseif ($user->role->name === 'instructor') {
             // Instructor: return exams for courses they teach.
-            $exams = Exam::with('course')->whereHas('course', function ($query) use ($user) {
-                $query->where('instructor_id', $user->id);
-            })->get();
+            $exams = Exam::with('course')
+                // ->whereHas('course', function ($query) use ($user) {
+                //     $query->where('instructor_id', $user->id);
+                // })->get();
+                ->whereHas('course', fn($q) => $q->where('instructor_id', $user->id))
+                ->orderBy('created_at', 'desc')->get();
         } else {
             // Student: return exams for courses where the student is enrolled.
             $exams = Exam::with('course')
-                ->whereHas('course.enrollments', function ($query) use ($user) {
-                    $query->where('user_id', $user->id)
-                        ->where('status', 'enrolled');
-                })->get();
+                // ->whereHas('course.enrollments', function ($query) use ($user) {
+                //     $query->where('user_id', $user->id)
+                //         ->where('status', 'enrolled');
+                // })->get();
+                ->whereHas(
+                    'course.enrollments',
+                    fn($q) => $q
+                        ->where('user_id', $user->id)
+                        ->where('status', 'enrolled')
+                )
+                ->orderBy('created_at', 'desc')->get();
         }
 
         return response()->json($exams);
@@ -41,27 +51,27 @@ class ExamController extends Controller
 
         // 1. Validate input
         $data = $request->validate([
-            'course_id'        => 'required|exists:courses,id',
-            'name'             => 'required|string|max:255',
-            'intro'            => 'nullable|string',
-            'time_open'        => 'nullable|date',
-            'time_close'       => 'nullable|date|after:time_open',
-            'time_limit'       => 'nullable|integer|min:1',
-            'grade'            => 'required|integer|min:0',
-            'questions_count'  => 'required|integer|min:1',
-            'exam_type'        => 'required|in:multiple_choice,short_answer,true_false,essay',
-            'shuffle_questions'=> 'nullable|boolean',
-            'shuffle_answers'  => 'nullable|boolean',
-            'attempts'         => 'required|integer|min:1',
+            'course_id' => 'required|exists:courses,id',
+            'name' => 'required|string|max:255',
+            'intro' => 'nullable|string',
+            'time_open' => 'nullable|date',
+            'time_close' => 'nullable|date|after:time_open',
+            'time_limit' => 'nullable|integer|min:1',
+            'grade' => 'required|integer|min:0',
+            'questions_count' => 'required|integer|min:1',
+            'exam_type' => 'required|in:multiple_choice,short_answer,true_false,essay',
+            'shuffle_questions' => 'nullable|boolean',
+            'shuffle_answers' => 'nullable|boolean',
+            'attempts' => 'required|integer|min:1',
             'feedback_enabled' => 'nullable|boolean',
-            'version'          => 'nullable|integer|min:1',
-            'question_pool'    => 'nullable|array',
-            'status'           => 'required|in:active,archived,draft',
+            'version' => 'nullable|integer|min:1',
+            'question_pool' => 'nullable|array',
+            'status' => 'required|in:active,archived,draft',
         ]);
 
         // 2. Authorization: only admin or the course's instructor
         $course = Course::find($data['course_id']);
-        if (! $course) {
+        if (!$course) {
             return response()->json(['message' => 'Course not found'], 404);
         }
         if ($user->role->name !== 'admin' && $course->instructor_id !== $user->id) {
@@ -70,28 +80,28 @@ class ExamController extends Controller
 
         // 3. Build & save
         $exam = new Exam();
-        $exam->course_id         = $data['course_id'];
-        $exam->name              = $data['name'];
-        $exam->intro             = $data['intro'] ?? null;
-        $exam->time_open         = $data['time_open'] ?? null;
-        $exam->time_close        = $data['time_close'] ?? null;
-        $exam->time_limit        = $data['time_limit'] ?? null;
-        $exam->grade             = $data['grade'];
-        $exam->questions_count   = $data['questions_count'];
-        $exam->exam_type         = $data['exam_type'];
+        $exam->course_id = $data['course_id'];
+        $exam->name = $data['name'];
+        $exam->intro = $data['intro'] ?? null;
+        $exam->time_open = $data['time_open'] ?? null;
+        $exam->time_close = $data['time_close'] ?? null;
+        $exam->time_limit = $data['time_limit'] ?? null;
+        $exam->grade = $data['grade'];
+        $exam->questions_count = $data['questions_count'];
+        $exam->exam_type = $data['exam_type'];
         $exam->shuffle_questions = $request->boolean('shuffle_questions', true);
-        $exam->shuffle_answers   = $request->boolean('shuffle_answers', true);
-        $exam->attempts          = $data['attempts'];
-        $exam->feedback_enabled  = $request->boolean('feedback_enabled', true);
-        $exam->version           = $data['version'] ?? 1;
-        $exam->question_pool     = $data['question_pool'] ?? [];
-        $exam->status            = $data['status'];
-        $exam->created_by        = $user->id;
+        $exam->shuffle_answers = $request->boolean('shuffle_answers', true);
+        $exam->attempts = $data['attempts'];
+        $exam->feedback_enabled = $request->boolean('feedback_enabled', true);
+        $exam->version = $data['version'] ?? 1;
+        $exam->question_pool = $data['question_pool'] ?? [];
+        $exam->status = $data['status'];
+        $exam->created_by = $user->id;
         $exam->save();
 
         return response()->json([
             'message' => 'Exam created successfully',
-            'exam'    => $exam,
+            'exam' => $exam,
         ], 201);
     }
 
