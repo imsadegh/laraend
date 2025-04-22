@@ -34,7 +34,9 @@ class ExamQuestionController extends Controller
         }
 
         // 3. Fetch only non‑deleted exam questions
-        $questions = $exam->questions()->whereNull('exam_questions.deleted_at')->get(); // Eloquent SoftDeletes will automatically exclude trashed rows
+        $questions = $exam->questions()->whereNull('exam_questions.deleted_at')
+        ->orderBy('exam_questions.id', 'desc')
+        ->get(); // Eloquent SoftDeletes will automatically exclude trashed rows
 
         return response()->json($questions);
     }
@@ -110,7 +112,7 @@ class ExamQuestionController extends Controller
             'is_required' => 'nullable|boolean',
             // 'created_by' => auth()->id()
         ]);
-        $v['created_by'] = auth()->id();
+        // $v['created_by'] = auth()->id();
 
         $eq->update($v);
         return response()->json(['message' => 'ExamQuestion updated', 'exam_question' => $eq]);

@@ -69,7 +69,7 @@ class QuestionController extends Controller
             'correct_answers' => 'nullable|array',
             'correct_answers.*' => 'string',
         ]);
-        $v['created_by'] = auth()->id();
+        // $v['created_by'] = auth()->id();
 
         $q->update($v);
         return response()->json(['message' => 'Question updated', 'question' => $q]);
