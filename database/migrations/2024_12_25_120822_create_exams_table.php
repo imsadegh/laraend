@@ -27,6 +27,7 @@ return new class extends Migration {
             $table->integer('version')->default(1); // Version number for the exam (useful for tracking updates)
             $table->json('question_pool')->nullable(); // JSON to store random question pool if applicable
             $table->enum('status', ['active', 'inactive', 'draft'])->default('inactive');
+            $table->boolean('is_published')->default(false); // Indicates if the exam is published or not
             // $table->string('time_zone')->default('Asia/Tehran'); // Store time zone for the exam
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

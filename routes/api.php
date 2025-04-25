@@ -104,30 +104,30 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
 Route::middleware('auth:api')->group(function () {
     Route::apiResource('exams', ExamController::class);
     //  GET    /exams   → index     | 	GET    /exams/{exam}    → show
-    //  POST   /exams   → store     |	PUT    /exams/{exam}   → update
-    //  DELETE /exams/{exam}   → destroy
-
     Route::apiResource('questions', QuestionController::class);
-
     Route::apiResource('exams.questions', ExamQuestionController::class)
         ->parameters(['questions' => 'id']);
     //  GET    /exams/{exam}/questions ➜ index     |  GET    /exams/{exam}/questions/{id} ➜ show
-    //  POST   /exams/{exam}/questions ➜ store     |  PUT    /exams/{exam}/questions/{id} ➜ update
-    //  DELETE /exams/{exam}/questions/{id} ➜ destroy
 
+    // attempts nested under exams; `shallow()` keeps nice URLs
+    Route::apiResource('exams.attempts', ExamAttemptController::class)
+        ->shallow()                                   // GET /attempts/{id} instead of /exams/{exam}/attempts/{id}
+        ->only(['store','index','show','update']);    // we don’t need destroy/create/edit routes
 
-    // only when the exam is active
-    Route::post('/exams/{exam}/attempts', [ExamAttemptController::class, 'store']); // for students starting/submitting an exam
-    Route::get('/instructor/exam-attempts', [ExamAttemptController::class, 'index']); // List exam attempts for courses taught by the instructor
-    Route::get('/exam-attempts/{attempt}', [ExamAttemptController::class, 'show']); // Get details of an exam attempt
-    Route::put('/exam-attempts/{attempt}', [ExamAttemptController::class, 'update']); // Update an exam attempt (submit answers)
+    // extra read-only endpoint for “next unanswered question”
+    Route::get('exams/{exam}/attempts/{attempt}/next',
+        [ExamAttemptController::class,'next']
+    )->name('attempts.next');
 
-    Route::post('/exam-attempts/{attempt}/answers', [ExamAttemptAnswerController::class, 'store']);
+    // single-answer endpoint nested under attempts
+    Route::apiResource('attempts.answers', ExamAttemptAnswerController::class)
+        ->shallow()
+        ->only(['store']);
     // Route::put('/exam-attempts/{attempt}/review', [ExamAttemptController::class, 'review']); // rev an exam attempt (assign score/feedback)
+
     // Optionally, if you handle exam scores separately:
     // Route::get('/exam-scores', [ExamScoreController::class, 'index']); // List exam scores (if needed)
 });
-
 
 
 // Route::fallback(function () {

@@ -18,7 +18,7 @@ return new class extends Migration {
             // For essay or short-answer
             $table->string('selected_option')->nullable();
             // For multiple_choice / true_false if they pick "A" or "True"
-            $table->boolean('is_correct')->default(false);
+            $table->boolean('is_correct')->nullable()->default(null);
             // Or store correctness if you auto-grade multiple-choice
             $table->decimal('score_earned', 5, 2)->nullable()->comment('Points for this question');
 

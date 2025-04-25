@@ -13,25 +13,35 @@ class ExamController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+        $now = now();                       // for time-window chec
+
+        // optional filter: only exams of one course
+        $courseFilter = fn($q) => $request->filled('course_id')
+            ? $q->where('course_id', $request->course_id)
+            : $q;
 
         if ($user->role->name === 'admin') {
             // Admin: return all exams with course details.
-            $exams = Exam::with('course')->orderBy('created_at', 'desc')->get();
-        } elseif ($user->role->name === 'instructor') {
-            // Instructor: return exams for courses they teach.
             $exams = Exam::with('course')
-                // ->whereHas('course', function ($query) use ($user) {
-                //     $query->where('instructor_id', $user->id);
-                // })->get();
+                // ->where($courseFilter)
+                ->orderBy('created_at', 'desc')->get();
+        } elseif ($user->role->name === 'instructor') {
+            // Instructor: return exams for courses they teach where is_published is true.
+            $exams = Exam::with('course')
                 ->whereHas('course', fn($q) => $q->where('instructor_id', $user->id))
+                // ->where($courseFilter)
+                ->where('is_published', true)
                 ->orderBy('created_at', 'desc')->get();
         } else {
             // Student: return exams for courses where the student is enrolled.
             $exams = Exam::with('course')
-                // ->whereHas('course.enrollments', function ($query) use ($user) {
-                //     $query->where('user_id', $user->id)
-                //         ->where('status', 'enrolled');
-                // })->get();
+                ->where($courseFilter)
+                ->where('is_published', true)
+                ->where('status', 'active')
+                ->where(function ($q) use ($now) {         // within open/close window
+                    $q->whereNull('time_open')
+                        ->orWhere('time_open', '<=', $now);
+                })
                 ->whereHas(
                     'course.enrollments',
                     fn($q) => $q
@@ -66,7 +76,8 @@ class ExamController extends Controller
             'feedback_enabled' => 'nullable|boolean',
             'version' => 'nullable|integer|min:1',
             'question_pool' => 'nullable|array',
-            'status' => 'required|in:active,archived,draft',
+            'status' => 'required|in:active,inactive,draft',
+            'is_published' => 'nullable|boolean',
         ]);
 
         // 2. Authorization: only admin or the course's instructor
@@ -96,6 +107,7 @@ class ExamController extends Controller
         $exam->version = $data['version'] ?? 1;
         $exam->question_pool = $data['question_pool'] ?? [];
         $exam->status = $data['status'];
+        $exam->is_published = $data['is_published'] ?? false;
         $exam->created_by = $user->id;
         $exam->save();
 
@@ -158,8 +170,9 @@ class ExamController extends Controller
             'attempts' => 'sometimes|required|integer|min:1',
             'feedback_enabled' => 'nullable|boolean',
             'version' => 'nullable|integer|min:1',
-            'question_pool' => 'nullable|json',
-            'status' => 'sometimes|required|in:active,archived,draft',
+            'question_pool' => 'nullable|array',
+            'status' => 'sometimes|required|in:active,inactive,draft',
+            'is_published' => 'nullable|boolean',
             // 'time_zone' => 'sometimes|required|string',
         ]);
 

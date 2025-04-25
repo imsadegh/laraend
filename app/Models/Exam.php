@@ -26,14 +26,16 @@ class Exam extends Model
         'version',
         'question_pool',
         'status',
+        'is_published',
         // 'time_zone',
         'created_by',
     ];
 
     protected $casts = [
-        'time_open'         => 'datetime',
-        'time_close'        => 'datetime',
-        'question_pool'     => 'array',
+        'time_open' => 'datetime',
+        'time_close' => 'datetime',
+        'question_pool' => 'array',
+        // 'is_published'     => 'boolean',
     ];
 
     public function course()
@@ -54,7 +56,14 @@ class Exam extends Model
     public function questions()
     {
         return $this->belongsToMany(Question::class, 'exam_questions')
-                    ->withPivot('position', 'is_required')
-                    ->withTimestamps();
+            // ->withPivot('position', 'is_required')
+            ->withPivot(['id', 'position', 'is_required'])
+            ->withTimestamps();
     }
+
+    public function scores()
+    {
+        return $this->hasMany(ExamScore::class);
+    }
+
 }
