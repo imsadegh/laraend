@@ -143,7 +143,17 @@ class ExamAttemptController extends Controller
 
     public function show($attemptId)
     {
-        $attempt = ExamAttempt::with(['exam', 'user', 'answers'])->find($attemptId);
+        // $attempt = ExamAttempt::with(['exam', 'user', 'answers'])->find($attemptId);
+
+        // eager-load: course → security check, answers.question → review screen, examScore (if any)
+        $attempt = ExamAttempt::with([
+            'exam.course',
+            // ↓  limit columns sent to frontend
+            'user:id,full_name',
+            'answers.question',
+            'examScore',          // add hasOne() in model if missing
+        ])->find($attemptId);
+
         if (!$attempt) {
             return response()->json(['message' => 'Exam attempt not found'], 404);
         }
@@ -156,10 +166,10 @@ class ExamAttemptController extends Controller
         }
 
         // If the user is an instructor, ensure they are the instructor for the course that owns this exam.
-        if ($user->role->name === 'instructor') {
-            if (!$attempt->exam || !$attempt->exam->course || $attempt->exam->course->instructor_id !== $user->id) {
-                return response()->json(['message' => 'Unauthorized'], 403);
-            }
+        if ($user->role->name === 'instructor' && $attempt->exam->course->instructor_id !== $user->id) {
+            // if (!$attempt->exam || !$attempt->exam->course || $attempt->exam->course->instructor_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+            // }
         }
 
         return response()->json($attempt);
@@ -168,23 +178,38 @@ class ExamAttemptController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+
+        /* ── role check ───────────────────────────── */
         if (!in_array($user->role->name, ['instructor', 'admin'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $attempts = ExamAttempt::with(['exam', 'user', 'exam.course'])
-            ->whereHas('exam.course', function ($query) use ($user) {
-                $query->where('instructor_id', $user->id);
-            })
-            ->get();
+        /* ── base query with eager-loads ──────────── */
+        // $q = ExamAttempt::with(['exam.course', 'user'])
+        $q = ExamAttempt::with(['exam.course', 'user', 'examScore'])
+            ->orderByDesc('created_at');
 
-        return response()->json($attempts);
+        /* ── restrict to instructor’s own courses ── */
+        if ($user->role->name === 'instructor') {
+            $q->whereHas('exam.course', fn($c) => $c->where('instructor_id', $user->id));
+        }
+
+        /* ── optional filters ─────────────────────── */
+        if ($request->filled('course_id')) {
+            $q->whereHas('exam', fn($e) => $e->where('course_id', $request->course_id));
+        }
+        if ($request->filled('exam_id')) {
+            $q->where('exam_id', $request->exam_id);
+        }
+
+        return response()->json($q->get());
     }
+
 
     public function review(Request $request, $attemptId)
     {
         $validated = $request->validate([
-            'score' => 'nullable|numeric|min:0|max:100',
+            'score' => 'nullable|numeric|min:0|max:20',
             'feedback' => 'nullable|string',
             'grade_visibility' => 'nullable|boolean',
             'reviewed_by' => 'required|exists:users,id',

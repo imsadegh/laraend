@@ -122,7 +122,7 @@ class AssignmentSubmissionController extends Controller
     public function review(Request $request, $id)
     {
         $validated = $request->validate([
-            'score' => 'nullable|numeric|min:0|max:100',
+            'score' => 'nullable|numeric|min:0|max:20',
             'feedback' => 'nullable|string',
             'grade_visibility' => 'nullable|boolean',
             'reviewed_by' => 'required|exists:users,id',

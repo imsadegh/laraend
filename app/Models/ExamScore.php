@@ -11,6 +11,7 @@ class ExamScore extends Model
 
     protected $fillable = [
         'exam_id',
+        'attempt_id',
         'user_id',
         'score',
         'is_passed',

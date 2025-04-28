@@ -112,11 +112,14 @@ Route::middleware('auth:api')->group(function () {
     // attempts nested under exams; `shallow()` keeps nice URLs
     Route::apiResource('exams.attempts', ExamAttemptController::class)
         ->shallow()                                   // GET /attempts/{id} instead of /exams/{exam}/attempts/{id}
-        ->only(['store','index','show','update']);    // we don’t need destroy/create/edit routes
+        ->only(['store', 'index', 'show', 'update']);
+    // list / filter all attempts (instructor & admin)
+    Route::get('/exam-attempts', [ExamAttemptController::class, 'index']);
 
     // extra read-only endpoint for “next unanswered question”
-    Route::get('exams/{exam}/attempts/{attempt}/next',
-        [ExamAttemptController::class,'next']
+    Route::get(
+        'exams/{exam}/attempts/{attempt}/next',
+        [ExamAttemptController::class, 'next']
     )->name('attempts.next');
 
     // single-answer endpoint nested under attempts
@@ -125,8 +128,7 @@ Route::middleware('auth:api')->group(function () {
         ->only(['store']);
     // Route::put('/exam-attempts/{attempt}/review', [ExamAttemptController::class, 'review']); // rev an exam attempt (assign score/feedback)
 
-    // Optionally, if you handle exam scores separately:
-    // Route::get('/exam-scores', [ExamScoreController::class, 'index']); // List exam scores (if needed)
+    Route::apiResource('exam-scores', ExamScoreController::class)->only(['index', 'update', 'store']);
 });
 
 

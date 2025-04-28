@@ -20,9 +20,9 @@ class ExamAttempt extends Model
 
     protected $casts = [
         'attempt_number' => 'integer',
-        'started_at'     => 'datetime',
-        'finished_at'    => 'datetime',
-        'is_submitted'   => 'boolean',
+        'started_at' => 'datetime',
+        'finished_at' => 'datetime',
+        'is_submitted' => 'boolean',
     ];
 
     public function exam()
@@ -39,4 +39,14 @@ class ExamAttempt extends Model
     {
         return $this->hasMany(ExamAttemptAnswer::class);
     }
+
+    public function examScore()
+    {
+        return $this->hasOne(ExamScore::class, 'exam_id', 'exam_id')
+            // ->where('user_id', $this->user_id);
+
+            // ->whereColumn('exam_scores.user_id', 'exam_attempts.user_id');
+            ->where('is_reexam', false);           // ignore re-exams if you like
+    }
+
 }
