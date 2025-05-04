@@ -22,7 +22,7 @@ class AuthController extends Controller
             // 'username' => 'required|string|max:255|unique:users',
             // 'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8',
-            'role_id' => 'required|exists:roles,id', // Validate role_id against roles table
+            // 'role_id' => 'required|exists:roles,id', // Validate role_id against roles table
         ]);
 
         if ($validator->fails()) {
@@ -66,8 +66,8 @@ class AuthController extends Controller
     {
         // Validate the request
         $validator = Validator::make($request->all(), [
-            // 'phone_number' => 'required|regex:/^09\d{9}$/',
-            'email' => 'required|email',
+            'phone_number' => 'required|regex:/^09\d{9}$/',
+            // 'email' => 'required|email',
             'password' => 'required|string|min:8',
         ]);
 
@@ -78,7 +78,7 @@ class AuthController extends Controller
         // Attempt to find the user
         // $user = User::where('phone_number', $request->phone_number)->first();
         // $user = User::where('email', $request->email)->first();
-        $user = User::where('email', $request->email)->with('role')->first();
+        $user = User::where('phone_number', $request->phone_number)->with('role')->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['errors' => ['credentials' => 'Invalid phone number or password.']], 401);
