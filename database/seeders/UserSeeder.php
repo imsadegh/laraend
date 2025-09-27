@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
             'full_name' => 'صادق حیدرپور',
             'username' => 'sadegh904',
             'email' => 'admin@demo.com',
-            'phone_number' => '09364565465',
+            'phone_number' => '09354555328',
             'email_verified_at' => now(),
             'password' => bcrypt('Sadegh@123'),
             'is_verified' => true,
