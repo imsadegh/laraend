@@ -20,7 +20,7 @@ NC='\033[0m' # No Color
 # Configuration
 LOCAL_DIR="/Users/sadeghmbp/Downloads/myDocuments/_develop/_fs_dev/hakimyarFusion/laraend"
 REMOTE_USER="deploy"
-REMOTE_HOST="172.20.10.6"
+REMOTE_HOST="5.182.44.108"
 REMOTE_PORT=2222
 REMOTE_DIR="/var/www/laraend"
 

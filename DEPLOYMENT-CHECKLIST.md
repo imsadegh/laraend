@@ -4,8 +4,8 @@ Use this checklist to ensure all deployment steps are completed successfully.
 
 ## Pre-Deployment
 
-- [ ] VPS is accessible via SSH (172.20.10.6)
-- [ ] Domain DNS is configured (api.ithdp.ir → 172.20.10.6)
+- [ ] VPS is accessible via SSH (5.182.44.108)
+- [ ] Domain DNS is configured (api.ithdp.ir → 5.182.44.108)
 - [ ] DNS propagation verified (`dig api.ithdp.ir`)
 - [ ] All local changes committed and tested
 - [ ] Database credentials decided
@@ -115,7 +115,7 @@ Use this checklist to ensure all deployment steps are completed successfully.
 
 ## Notes
 
-**VPS IP**: 172.20.10.6  
+**VPS IP**: 5.182.44.108  
 **Domain**: api.ithdp.ir  
 **Database**: laraend_db  
 **DB User**: laraend_user  
@@ -125,7 +125,7 @@ Use this checklist to ensure all deployment steps are completed successfully.
 **Important Commands**:
 ```bash
 # SSH into server
-ssh deploy@172.20.10.6
+ssh deploy@5.182.44.108
 
 # Navigate to project
 cd /var/www/laraend

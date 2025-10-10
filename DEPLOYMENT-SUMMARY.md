@@ -54,7 +54,7 @@ I've prepared comprehensive deployment documentation and helper scripts for depl
 ## Deployment Configuration
 
 ### Server Details
-- **VPS IP**: 172.20.10.6
+- **VPS IP**: 5.182.44.108
 - **OS**: Ubuntu 24.04 LTS
 - **Domain**: api.ithdp.ir (subdomain for API)
 - **User**: deploy
@@ -126,10 +126,10 @@ Production environment uses:
 ```bash
 # On your Mac - Upload files
 rsync -avz --exclude='vendor' --exclude='node_modules' \
-    --exclude='.env' ./ deploy@172.20.10.6:/var/www/laraend/
+    --exclude='.env' ./ deploy@5.182.44.108:/var/www/laraend/
 
 # SSH to server
-ssh deploy@172.20.10.6
+ssh deploy@5.182.44.108
 
 # Run deployment script
 cd /var/www/laraend
@@ -144,7 +144,7 @@ Before SSL setup, you MUST configure DNS:
 2. **Add A Record**:
    - Type: A
    - Name: api
-   - Value: 172.20.10.6
+   - Value: 5.182.44.108
    - TTL: 3600 (or default)
 
 3. **Verify DNS propagation**:
@@ -257,7 +257,7 @@ tail -f /var/www/laraend/storage/logs/worker.log
 
 ## Next Steps
 
-1. **Configure DNS** for api.ithdp.ir → 172.20.10.6
+1. **Configure DNS** for api.ithdp.ir → 5.182.44.108
 2. **Wait for DNS propagation**
 3. **Follow laraend.md** step by step for initial deployment
 4. **Test API endpoints** after deployment
@@ -286,5 +286,5 @@ Before deployment, ensure you have:
 
 **Created**: October 10, 2025  
 **For**: HakimyarFusion LMS - Laraend Backend  
-**Deployment Target**: Ubuntu 24.04 VPS (172.20.10.6)
+**Deployment Target**: Ubuntu 24.04 VPS (5.182.44.108)
 

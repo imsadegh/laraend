@@ -4,7 +4,7 @@
 
 ```bash
 # SSH to VPS
-ssh deploy@172.20.10.6
+ssh deploy@5.182.44.108
 
 # Navigate to app
 cd /var/www/laraend
@@ -353,7 +353,7 @@ sudo nano /etc/redis/redis.conf
 
 - **API**: https://api.ithdp.ir
 - **Frontend**: https://ithdp.ir
-- **VPS IP**: 172.20.10.6
+- **VPS IP**: 5.182.44.108
 
 ## Credentials
 

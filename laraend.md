@@ -5,7 +5,7 @@
 
 ### Tech Stack
 - **Framework**: Laravel 12.x
-- **PHP Version**: 8.4.13 (Development) / 8.3+ (Production)
+- **PHP Version**: 8.4.13 (Development) / 8.4+ (Production)
 - **Database**: PostgreSQL 16
 - **Cache/Queue**: Redis
 - **Web Server**: Nginx
@@ -24,7 +24,7 @@
 ## VPS Deployment Guide
 
 ### Server Information
-- **VPS IP**: 172.20.10.6
+- **VPS IP**: 5.182.44.108
 - **OS**: Ubuntu 24.04 LTS
 - **Domain**: api.ithdp.ir
 - **Database**: PostgreSQL (same VPS)
@@ -37,7 +37,7 @@
 
 ### 1.1 Connect to VPS
 ```bash
-ssh root@172.20.10.6
+ssh root@5.182.44.108
 ```
 
 ### 1.2 Update System
@@ -66,17 +66,17 @@ su - deploy
 
 ## Step 2: Install Required Software
 
-### 2.1 Install PHP 8.3 and Extensions
+### 2.1 Install PHP 8.4 and Extensions
 ```bash
 sudo apt install -y software-properties-common
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update
 
-# Install PHP 8.3 and required extensions
-sudo apt install -y php8.3 php8.3-fpm php8.3-cli php8.3-common \
-    php8.3-pgsql php8.3-mbstring php8.3-xml php8.3-curl \
-    php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl \
-    php8.3-redis php8.3-opcache
+# Install PHP 8.4 and required extensions
+sudo apt install -y php8.4 php8.4-fpm php8.4-cli php8.4-common \
+    php8.4-pgsql php8.4-mbstring php8.4-xml php8.4-curl \
+    php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl \
+    php8.4-redis php8.4-opcache
 
 # Verify PHP installation
 php -v
@@ -207,7 +207,7 @@ git clone <your-git-repository-url> .
 # Or initialize git and push from local
 # On your local machine:
 cd /Users/sadeghmbp/Downloads/myDocuments/_develop/_fs_dev/hakimyarFusion/laraend
-git remote add production deploy@172.20.10.6:/var/www/laraend.git
+git remote add production deploy@5.182.44.108:/var/www/laraend.git
 git push production main
 ```
 
@@ -223,7 +223,7 @@ rsync -avz --exclude='vendor' --exclude='node_modules' \
     --exclude='storage/framework/sessions/*' \
     --exclude='storage/framework/views/*' \
     --exclude='.git' \
-    ./ deploy@172.20.10.6:/var/www/laraend/
+    ./ deploy@5.182.44.108:/var/www/laraend/
 ```
 
 ### 4.3 Install Dependencies
@@ -417,7 +417,62 @@ If you encounter `Class "Faker\Factory" not found` error, it's because Faker is 
 sudo nano /etc/nginx/sites-available/laraend
 ```
 
-**Nginx Configuration:**
+**Working Nginx Configuration:**
+```nginx
+# Laraend Nginx Configuration (Without SSL - for testing)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api.ithdp.ir 5.182.44.108;
+
+    root /var/www/laraend/public;
+    index index.php index.html;
+
+    # Logging
+    access_log /var/log/nginx/laraend-access.log;
+    error_log /var/log/nginx/laraend-error.log;
+
+    # Client body size (for file uploads)
+    client_max_body_size 100M;
+
+    # Gzip Compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+
+    # Laravel public directory
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # PHP-FPM Configuration
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+
+        # Increase timeouts for long-running requests
+        fastcgi_read_timeout 300;
+        fastcgi_send_timeout 300;
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+    }
+
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+**For SSL Configuration (After Domain Setup):**
 ```nginx
 # HTTP - Redirect to HTTPS
 server {
@@ -471,7 +526,7 @@ server {
 
     # PHP-FPM Configuration
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
@@ -521,7 +576,7 @@ sudo systemctl restart nginx
 
 ### 6.1 Optimize PHP-FPM Configuration
 ```bash
-sudo nano /etc/php/8.3/fpm/pool.d/www.conf
+sudo nano /etc/php/8.4/fpm/pool.d/www.conf
 ```
 
 **Key configurations to modify:**
@@ -543,7 +598,7 @@ pm.max_requests = 500
 
 ### 6.2 Optimize PHP Configuration
 ```bash
-sudo nano /etc/php/8.3/fpm/php.ini
+sudo nano /etc/php/8.4/fpm/php.ini
 ```
 
 **Key settings:**
@@ -566,7 +621,7 @@ opcache.fast_shutdown=1
 
 ### 6.3 Restart PHP-FPM
 ```bash
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.4-fpm
 ```
 
 ---
@@ -574,10 +629,10 @@ sudo systemctl restart php8.3-fpm
 ## Step 7: Configure SSL with Let's Encrypt
 
 ### 7.1 DNS Configuration
-Before obtaining SSL certificate, ensure your domain `api.ithdp.ir` points to your VPS IP `172.20.10.6`.
+Before obtaining SSL certificate, ensure your domain `api.ithdp.ir` points to your VPS IP `5.182.44.108`.
 
 **In your DirectAdmin panel or DNS provider:**
-1. Add an A record: `api.ithdp.ir` → `172.20.10.6`
+1. Add an A record: `api.ithdp.ir` → `5.182.44.108`
 2. Wait for DNS propagation (can take up to 48 hours, usually much faster)
 3. Verify DNS: `dig api.ithdp.ir` or `nslookup api.ithdp.ir`
 
@@ -786,10 +841,10 @@ rsync -avz --exclude='vendor' --exclude='node_modules' \
     --exclude='storage/framework/sessions/*' \
     --exclude='storage/framework/views/*' \
     --exclude='.git' \
-    ./ deploy@172.20.10.6:/var/www/laraend/
+    ./ deploy@5.182.44.108:/var/www/laraend/
 
 # SSH into server
-ssh deploy@172.20.10.6
+ssh deploy@5.182.44.108
 
 # Navigate to project
 cd /var/www/laraend
@@ -812,7 +867,7 @@ php artisan config:cache
 php artisan route:cache
 
 # Restart services
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.4-fpm
 sudo supervisorctl restart laraend-worker:*
 
 # Bring application back online
@@ -837,7 +892,7 @@ rsync -avz /path/to/backup/ /var/www/laraend/
 php artisan migrate:rollback --force
 
 # Restart services
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.4-fpm
 sudo supervisorctl restart laraend-worker:*
 ```
 
@@ -963,7 +1018,7 @@ curl https://api.ithdp.ir/api/courses \
 sudo systemctl status nginx
 
 # Check PHP-FPM
-sudo systemctl status php8.3-fpm
+sudo systemctl status php8.4-fpm
 
 # Check PostgreSQL
 sudo systemctl status postgresql
@@ -984,7 +1039,7 @@ tail -f /var/www/laraend/storage/logs/laravel.log
 tail -f /var/log/nginx/laraend-error.log
 
 # PHP-FPM logs
-tail -f /var/log/php8.3-fpm.log
+tail -f /var/log/php8.4-fpm.log
 ```
 
 ---
@@ -1032,7 +1087,7 @@ composer remove fakerphp/faker --dev
 **Solution 2 - Upload Updated Seeder (Recommended):**
 ```bash
 # On your Mac, upload the updated UserSeeder.php
-rsync -avz database/seeders/UserSeeder.php deploy@172.20.10.6:/var/www/laraend/database/seeders/
+rsync -avz database/seeders/UserSeeder.php deploy@5.182.44.108:/var/www/laraend/database/seeders/
 
 # On VPS, run seeder
 php artisan db:seed --class=UserSeeder --force
@@ -1042,13 +1097,13 @@ php artisan db:seed --class=UserSeeder --force
 **Solution:**
 ```bash
 # Check PHP-FPM status
-sudo systemctl status php8.3-fpm
+sudo systemctl status php8.4-fpm
 
 # Check PHP-FPM logs
-tail -f /var/log/php8.3-fpm.log
+tail -f /var/log/php8.4-fpm.log
 
 # Restart PHP-FPM
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.4-fpm
 ```
 
 ### Issue: 500 Internal Server Error
@@ -1322,11 +1377,11 @@ php artisan migrate:fresh --force --seed
 ### Service Management
 ```bash
 # Restart all services
-sudo systemctl restart nginx php8.3-fpm postgresql redis-server
+sudo systemctl restart nginx php8.4-fpm postgresql redis-server
 sudo supervisorctl restart laraend-worker:*
 
 # Check all services status
-sudo systemctl status nginx php8.3-fpm postgresql redis-server
+sudo systemctl status nginx php8.4-fpm postgresql redis-server
 sudo supervisorctl status
 ```
 
@@ -1433,6 +1488,6 @@ composer update --no-dev
 
 **Last Updated**: October 10, 2025
 **Laravel Version**: 12.x
-**PHP Version**: 8.3+
+**PHP Version**: 8.4+
 **PostgreSQL Version**: 16
 
