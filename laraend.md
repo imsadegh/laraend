@@ -395,6 +395,19 @@ php artisan db:seed --class=CategorySeeder --force
 php artisan db:seed --class=UserSeeder --force
 ```
 
+**Note about Seeders in Production:**
+If you encounter `Class "Faker\Factory" not found` error, it's because Faker is a dev dependency. You have two options:
+
+1. **Temporary Install** (for initial setup):
+   ```bash
+   composer require fakerphp/faker --dev
+   php artisan db:seed --force
+   composer remove fakerphp/faker --dev
+   ```
+
+2. **Production-Safe Seeders** (recommended):
+   The UserSeeder has been updated to work without Faker in production. Upload the updated seeder file and it will create only the essential demo users without requiring Faker.
+
 ---
 
 ## Step 5: Configure Nginx
@@ -1004,6 +1017,26 @@ curl -H "Origin: https://ithdp.ir" \
 ---
 
 ## Troubleshooting
+
+### Issue: Class "Faker\Factory" not found (During Seeding)
+**Problem:** Faker is a dev dependency and not installed with `--no-dev` flag.
+
+**Solution 1 - Temporary Install:**
+```bash
+cd /var/www/laraend
+composer require fakerphp/faker --dev
+php artisan db:seed --force
+composer remove fakerphp/faker --dev
+```
+
+**Solution 2 - Upload Updated Seeder (Recommended):**
+```bash
+# On your Mac, upload the updated UserSeeder.php
+rsync -avz database/seeders/UserSeeder.php deploy@172.20.10.6:/var/www/laraend/database/seeders/
+
+# On VPS, run seeder
+php artisan db:seed --class=UserSeeder --force
+```
 
 ### Issue: 502 Bad Gateway
 **Solution:**
