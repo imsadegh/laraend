@@ -1,294 +1,151 @@
-# Deployment Checklist
+# Laraend Deployment Checklist
 
-Use this checklist to ensure a smooth deployment process.
+Use this checklist to ensure all deployment steps are completed successfully.
 
----
+## Pre-Deployment
 
-## Pre-Deployment Checklist
+- [ ] VPS is accessible via SSH (172.20.10.6)
+- [ ] Domain DNS is configured (api.ithdp.ir → 172.20.10.6)
+- [ ] DNS propagation verified (`dig api.ithdp.ir`)
+- [ ] All local changes committed and tested
+- [ ] Database credentials decided
+- [ ] SMS-IR API credentials ready
 
-### Local Machine (macOS)
-- [ ] All code changes committed and tested
-- [ ] `.env` file configured correctly for local development
-- [ ] Database migrations tested locally
-- [ ] All dependencies in `composer.json` are correct
-- [ ] Application runs without errors locally
-- [ ] PHP version compatibility checked (requires PHP 8.2+)
+## Server Setup
 
-### VPS Information Gathered
-- [ ] VPS IP address: `___________________`
-- [ ] SSH access confirmed
-- [ ] Root or sudo access available
-- [ ] Domain name (if applicable): `___________________`
-
-### Database Planning
-- [ ] Database name decided: `___________________`
-- [ ] Database username decided: `___________________`
-- [ ] Strong database password generated: `___________________`
-
----
-
-## Initial Server Setup Checklist
-
-- [ ] SSH into VPS successful
-- [ ] System packages updated (`apt update && apt upgrade`)
-- [ ] PHP 8.3 installed with all required extensions
-- [ ] PostgreSQL installed and running
-- [ ] Database and user created
-- [ ] Composer installed globally
+- [ ] System updated (`apt update && apt upgrade`)
+- [ ] Timezone set to Asia/Tehran
+- [ ] Deploy user created and configured
+- [ ] PHP 8.3 installed with all extensions
+- [ ] PostgreSQL 16 installed and running
+- [ ] Redis installed and running
 - [ ] Nginx installed and running
-- [ ] Application directory created (`/var/www/hakimyar-fusion`)
-- [ ] Firewall configured (UFW)
-- [ ] Nginx configuration created and enabled
-- [ ] PHP-FPM configured and running
-
-**Quick Command:**
-```bash
-./deploy-from-local.sh YOUR_VPS_IP setup
-```
-
----
-
-## Application Deployment Checklist
-
-- [ ] Application files uploaded to VPS
-- [ ] `.env` file created and configured on server
-- [ ] Composer dependencies installed (`composer install --no-dev`)
-- [ ] Application key generated (`php artisan key:generate`)
-- [ ] JWT secret generated (`php artisan jwt:secret`)
-- [ ] File permissions set correctly
-  - [ ] `chown -R www-data:www-data /var/www/hakimyar-fusion`
-  - [ ] `chmod -R 755 /var/www/hakimyar-fusion`
-  - [ ] `chmod -R 775 storage bootstrap/cache`
-- [ ] Database migrations run (`php artisan migrate --force`)
-- [ ] Database seeded (if needed) (`php artisan db:seed --force`)
-- [ ] Configuration cached
-  - [ ] `php artisan config:cache`
-  - [ ] `php artisan route:cache`
-  - [ ] `php artisan view:cache`
-- [ ] Services restarted (Nginx, PHP-FPM)
-- [ ] Application accessible via browser
-
-**Quick Command:**
-```bash
-./deploy-from-local.sh YOUR_VPS_IP deploy
-```
-
----
-
-## Post-Deployment Checklist
-
-### Testing
-- [ ] Homepage loads without errors
-- [ ] API endpoints responding correctly
-- [ ] Database connections working
-- [ ] File uploads working (if applicable)
-- [ ] Authentication working (login/register)
-- [ ] JWT tokens generating correctly
-
-### Security
-- [ ] `.env` file permissions set to 600
-- [ ] Debug mode disabled (`APP_DEBUG=false`)
-- [ ] Strong passwords used for database
-- [ ] SSH key authentication setup (recommended)
-- [ ] Default SSH port changed (optional but recommended)
-- [ ] Fail2Ban installed (optional)
-- [ ] SSL certificate installed (if using domain)
-
-### Monitoring & Maintenance
-- [ ] Backup script created and tested
-- [ ] Cron job for backups configured
-- [ ] Laravel scheduler cron job added (if using)
-- [ ] Log rotation configured
-- [ ] Monitoring tools setup (optional)
-- [ ] Error tracking configured (optional - Sentry, Bugsnag)
-
-### Performance
-- [ ] OPcache enabled
-- [ ] Redis installed (optional)
-- [ ] Queue workers setup (if using queues)
-- [ ] CDN configured (optional)
-
----
-
-## SSL Certificate Setup (Optional but Recommended)
-
-- [ ] Domain DNS pointing to VPS IP
-- [ ] Certbot installed
-- [ ] SSL certificate obtained
-- [ ] Auto-renewal tested
-- [ ] HTTPS redirect configured
-- [ ] Application URL updated in `.env` (https://)
-
-**Commands:**
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
-sudo certbot renew --dry-run
-```
-
----
-
-## Queue Workers Setup (If Using Queues)
-
+- [ ] Composer installed globally
 - [ ] Supervisor installed
-- [ ] Worker configuration created
-- [ ] Workers started and running
-- [ ] Worker logs accessible
+- [ ] Certbot installed
 
-**Configuration File:** `/etc/supervisor/conf.d/hakimyar-fusion-worker.conf`
+## Database Configuration
 
----
+- [ ] PostgreSQL database created (`laraend_db`)
+- [ ] PostgreSQL user created (`laraend_user`)
+- [ ] Database privileges granted
+- [ ] Database connection tested
 
-## Environment Variables Checklist
+## Application Setup
 
-Ensure these are properly configured in `.env` on the server:
+- [ ] Application directory created (`/var/www/laraend`)
+- [ ] Files uploaded to server
+- [ ] Composer dependencies installed
+- [ ] `.env` file created and configured
+- [ ] Application key generated
+- [ ] JWT secret generated
+- [ ] File permissions set correctly
+- [ ] Storage directories writable
+- [ ] Migrations run successfully
+- [ ] Seeders run (if needed)
 
-### Application
-- [ ] `APP_NAME` - Set to your app name
-- [ ] `APP_ENV` - Set to `production`
-- [ ] `APP_KEY` - Generated (not empty)
-- [ ] `APP_DEBUG` - Set to `false`
-- [ ] `APP_URL` - Set to your domain or IP
+## Web Server Configuration
 
-### Database
-- [ ] `DB_CONNECTION` - Set to `pgsql`
-- [ ] `DB_HOST` - Set to `127.0.0.1`
-- [ ] `DB_PORT` - Set to `5432`
-- [ ] `DB_DATABASE` - Your database name
-- [ ] `DB_USERNAME` - Your database user
-- [ ] `DB_PASSWORD` - Your database password
+- [ ] Nginx site configuration created
+- [ ] Nginx configuration tested (`nginx -t`)
+- [ ] Nginx restarted
+- [ ] PHP-FPM pool configured
+- [ ] PHP-FPM settings optimized
+- [ ] PHP-FPM restarted
 
-### JWT
-- [ ] `JWT_SECRET` - Generated (not empty)
-- [ ] `JWT_TTL` - Set appropriately (default: 60)
-- [ ] `JWT_REFRESH_TTL` - Set appropriately (default: 20160)
+## SSL Configuration
 
-### SMS (If Using)
-- [ ] `SMSIR_API_KEY` - Your SMS API key
+- [ ] DNS verified pointing to VPS
+- [ ] SSL certificate obtained via Certbot
+- [ ] HTTPS working correctly
+- [ ] HTTP redirects to HTTPS
+- [ ] Auto-renewal tested
 
-### Cache & Session
-- [ ] `CACHE_DRIVER` - Set appropriately
-- [ ] `SESSION_DRIVER` - Set appropriately
-- [ ] `QUEUE_CONNECTION` - Set appropriately
+## Queue & Scheduler
 
----
+- [ ] Supervisor configuration created
+- [ ] Queue workers started
+- [ ] Queue workers status verified
+- [ ] Cron job for scheduler added
+- [ ] Cron job tested
 
-## Backup & Recovery Checklist
+## Security
 
-### Backup Setup
-- [ ] Backup script created (`/usr/local/bin/backup-hakimyar.sh`)
-- [ ] Backup directory created (`/var/backups/hakimyar-fusion`)
-- [ ] Backup cron job configured
-- [ ] Test backup created and verified
-- [ ] Backup retention policy set (7 days default)
+- [ ] UFW firewall enabled
+- [ ] Firewall rules configured (22, 80, 443)
+- [ ] Redis password set (if needed)
+- [ ] PostgreSQL secured (localhost only)
+- [ ] `.env` file permissions secured (600)
+- [ ] Debug mode disabled in production
 
-### Recovery Testing
-- [ ] Database restore tested
-- [ ] File restore tested
-- [ ] Recovery procedure documented
+## Monitoring & Backups
 
----
+- [ ] Database backup script created
+- [ ] Application backup script created
+- [ ] Backup cron jobs scheduled
+- [ ] Backup scripts tested
+- [ ] Log rotation configured
 
-## Update/Maintenance Checklist
+## Testing
 
-Use this checklist when updating your application:
+- [ ] API health check endpoint tested
+- [ ] Authentication endpoints tested
+- [ ] CORS configuration verified
+- [ ] All services status checked
+- [ ] Logs reviewed for errors
+- [ ] Queue jobs processing verified
+- [ ] SSL certificate validated
 
-- [ ] Backup created before update
-- [ ] Maintenance mode enabled (`php artisan down`)
-- [ ] Latest code pulled/uploaded
-- [ ] Dependencies updated (`composer install`)
-- [ ] Migrations run (`php artisan migrate --force`)
-- [ ] Caches cleared and rebuilt
-- [ ] Services restarted
-- [ ] Maintenance mode disabled (`php artisan up`)
-- [ ] Application tested
-- [ ] Logs checked for errors
+## Post-Deployment
 
-**Quick Command:**
-```bash
-./deploy-from-local.sh YOUR_VPS_IP update
-```
+- [ ] Application caches cleared and rebuilt
+- [ ] All services restarted
+- [ ] Frontend configured with API URL
+- [ ] Mobile app configured with API URL
+- [ ] Performance monitoring set up
+- [ ] Documentation updated
+- [ ] Team notified of deployment
 
----
+## Rollback Plan
 
-## Troubleshooting Checklist
-
-If something goes wrong:
-
-- [ ] Check Laravel logs: `tail -f storage/logs/laravel.log`
-- [ ] Check Nginx error logs: `tail -f /var/log/nginx/error.log`
-- [ ] Check PHP-FPM logs: `tail -f /var/log/php8.3-fpm.log`
-- [ ] Verify services are running:
-  - [ ] `systemctl status nginx`
-  - [ ] `systemctl status php8.3-fpm`
-  - [ ] `systemctl status postgresql`
-- [ ] Check file permissions
-- [ ] Verify database connection
-- [ ] Clear all caches
-- [ ] Check `.env` configuration
-
----
-
-## Important Commands Reference
-
-### Service Management
-```bash
-sudo systemctl restart nginx
-sudo systemctl restart php8.3-fpm
-sudo systemctl restart postgresql
-```
-
-### Cache Management
-```bash
-php artisan cache:clear
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-```
-
-### Logs
-```bash
-tail -f storage/logs/laravel.log
-tail -f /var/log/nginx/error.log
-```
-
-### Permissions
-```bash
-sudo chown -R www-data:www-data /var/www/hakimyar-fusion
-sudo chmod -R 755 /var/www/hakimyar-fusion
-sudo chmod -R 775 /var/www/hakimyar-fusion/storage
-sudo chmod -R 775 /var/www/hakimyar-fusion/bootstrap/cache
-```
-
----
-
-## Contact & Support
-
-- **Laravel Documentation**: https://laravel.com/docs
-- **PostgreSQL Documentation**: https://www.postgresql.org/docs/
-- **Nginx Documentation**: https://nginx.org/en/docs/
-
----
+- [ ] Database backup taken before deployment
+- [ ] Application backup available
+- [ ] Rollback procedure documented
+- [ ] Rollback tested (in staging if available)
 
 ## Notes
 
-Use this space to document any custom configurations or important information:
+**VPS IP**: 172.20.10.6  
+**Domain**: api.ithdp.ir  
+**Database**: laraend_db  
+**DB User**: laraend_user  
+**Deploy User**: deploy  
+**App Path**: /var/www/laraend  
 
-```
-_______________________________________________________________________________
+**Important Commands**:
+```bash
+# SSH into server
+ssh deploy@172.20.10.6
 
-_______________________________________________________________________________
+# Navigate to project
+cd /var/www/laraend
 
-_______________________________________________________________________________
+# Restart all services
+sudo systemctl restart nginx php8.3-fpm postgresql redis-server
+sudo supervisorctl restart laraend-worker:*
 
-_______________________________________________________________________________
+# View logs
+tail -f storage/logs/laravel.log
+tail -f /var/log/nginx/laraend-error.log
+
+# Clear caches
+php artisan optimize:clear
+php artisan optimize
 ```
 
 ---
 
-**Deployment Date**: ___________________
-**Deployed By**: ___________________
-**VPS IP**: ___________________
-**Domain**: ___________________
-
+**Deployment Date**: _____________  
+**Deployed By**: _____________  
+**Version**: _____________  
 
