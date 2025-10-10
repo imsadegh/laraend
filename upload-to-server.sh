@@ -86,10 +86,13 @@ rsync -avz --progress \
     --exclude='.cursorignore' \
     --exclude='database/database.sqlite' \
     --exclude='*.md' \
+    --exclude='.DS_Store' \
+    --exclude='.vscode' \
     --exclude='tests/' \
     --exclude='phpunit.xml' \
     --exclude='deploy.sh' \
     --exclude='upload-to-server.sh' \
+    -e "ssh -p $REMOTE_PORT" \
     "$LOCAL_DIR/" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/"
 
 print_success "Files uploaded successfully"
