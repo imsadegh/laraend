@@ -64,7 +64,7 @@ I've prepared comprehensive deployment documentation and helper scripts for depl
 - **Web Server**: Nginx
 - **PHP**: 8.3 with FPM
 - **Database**: PostgreSQL 16
-- **Cache/Queue**: Redis
+- **Cache/Queue**: Redis (production) / Database (development)
 - **Process Manager**: Supervisor
 - **SSL**: Let's Encrypt (Certbot)
 
@@ -72,6 +72,18 @@ I've prepared comprehensive deployment documentation and helper scripts for depl
 - **Database Name**: laraend_db
 - **Username**: laraend_user
 - **Password**: LaraEnd2025!SecurePass (change if needed)
+
+### Development vs Production Differences
+Your development environment uses:
+- Database-driven sessions, cache, and queue
+- Debug mode enabled
+- Local URLs (localhost:8000 for API, localhost:5173 for frontend)
+
+Production environment uses:
+- Redis for sessions, cache, and queue (better performance)
+- Debug mode disabled
+- Production URLs (api.ithdp.ir for API, ithdp.ir for frontend)
+- Enhanced security settings (session encryption, secure cookies)
 
 ## Deployment Steps Overview
 

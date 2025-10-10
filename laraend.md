@@ -247,25 +247,30 @@ nano .env
 
 **Production .env Configuration:**
 ```env
-APP_NAME="Laraend API"
+# Application Configuration
+APP_NAME=Laravel
 APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
 APP_TIMEZONE=Asia/Tehran
 APP_URL=https://api.ithdp.ir
+FRONTEND_URL=https://ithdp.ir
+
+# SMS-IR Configuration (get from https://sms.ir)
+SMSIR_API_KEY=your_smsir_api_key_here
 
 APP_LOCALE=en
 APP_FALLBACK_LOCALE=en
 APP_FAKER_LOCALE=en_US
 
 APP_MAINTENANCE_DRIVER=file
-APP_MAINTENANCE_STORE=database
+# APP_MAINTENANCE_STORE=database
 
-# Frontend URL for CORS
-FRONTEND_URL=https://ithdp.ir
+PHP_CLI_SERVER_WORKERS=4
 
 BCRYPT_ROUNDS=12
 
+# Logging Configuration (error level for production)
 LOG_CHANNEL=stack
 LOG_STACK=single
 LOG_DEPRECATIONS_CHANNEL=null
@@ -279,63 +284,67 @@ DB_DATABASE=laraend_db
 DB_USERNAME=laraend_user
 DB_PASSWORD=LaraEnd2025!SecurePass
 
-# Session Configuration
+# Session Configuration (Redis for production performance)
 SESSION_DRIVER=redis
 SESSION_LIFETIME=120
 SESSION_ENCRYPT=true
 SESSION_PATH=/
 SESSION_DOMAIN=.ithdp.ir
-SESSION_SECURE_COOKIE=true
-SESSION_SAME_SITE=lax
 
-# Cache Configuration
+# Broadcasting, Filesystem, Queue
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=redis
+
+# Cache Configuration (Redis for production performance)
 CACHE_STORE=redis
 CACHE_PREFIX=laraend_cache
 
-# Queue Configuration
-QUEUE_CONNECTION=redis
+MEMCACHED_HOST=127.0.0.1
 
 # Redis Configuration
 REDIS_CLIENT=phpredis
 REDIS_HOST=127.0.0.1
 REDIS_PASSWORD=null
 REDIS_PORT=6379
-REDIS_DB=0
-REDIS_CACHE_DB=1
 
-# Mail Configuration (configure based on your mail service)
+# Mail Configuration
 MAIL_MAILER=log
+MAIL_SCHEME=null
 MAIL_HOST=127.0.0.1
 MAIL_PORT=2525
 MAIL_USERNAME=null
 MAIL_PASSWORD=null
-MAIL_ENCRYPTION=null
 MAIL_FROM_ADDRESS="noreply@ithdp.ir"
 MAIL_FROM_NAME="${APP_NAME}"
 
-# JWT Configuration
-JWT_SECRET=
-JWT_TTL=60
-JWT_REFRESH_TTL=20160
-JWT_ALGO=HS256
-
-# SMS Configuration (IPE SMS-IR)
-SMSIR_API_KEY=your_smsir_api_key_here
-SMSIR_LINE_NUMBER=your_line_number_here
-
-# Filesystem
-FILESYSTEM_DISK=local
-
-# AWS S3 (if needed in future)
+# AWS S3 Configuration (Optional)
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_DEFAULT_REGION=us-east-1
 AWS_BUCKET=
 AWS_USE_PATH_STYLE_ENDPOINT=false
 
-# Vite (not needed for API-only backend)
+# Vite Configuration
 VITE_APP_NAME="${APP_NAME}"
+
+# JWT Authentication
+JWT_SECRET=
 ```
+
+**Key Changes from Development to Production:**
+- `APP_ENV=production` (was: `local`)
+- `APP_DEBUG=false` (was: `true`)
+- `APP_URL=https://api.ithdp.ir` (was: `http://localhost:8000`)
+- `FRONTEND_URL=https://ithdp.ir` (was: `http://localhost:5173`)
+- `LOG_LEVEL=error` (was: `debug`)
+- `SESSION_DRIVER=redis` (was: `database`) - Better performance
+- `SESSION_ENCRYPT=true` (was: `false`) - Security
+- `SESSION_DOMAIN=.ithdp.ir` (was: `null`) - For CORS
+- `QUEUE_CONNECTION=redis` (was: `database`) - Better performance
+- `CACHE_STORE=redis` (was: `database`) - Better performance
+- `CACHE_PREFIX=laraend_cache` (was: empty) - Avoid conflicts
+- `MAIL_FROM_ADDRESS=noreply@ithdp.ir` (was: `hello@example.com`)
 
 ### 4.5 Generate Application Keys
 ```bash
