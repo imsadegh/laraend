@@ -21,6 +21,7 @@ NC='\033[0m' # No Color
 LOCAL_DIR="/Users/sadeghmbp/Downloads/myDocuments/_develop/_fs_dev/hakimyarFusion/laraend"
 REMOTE_USER="deploy"
 REMOTE_HOST="172.20.10.6"
+REMOTE_PORT=2222
 REMOTE_DIR="/var/www/laraend"
 
 # Functions
@@ -47,11 +48,11 @@ echo ""
 
 # Step 1: Test SSH connection
 print_info "Testing SSH connection..."
-if ssh -o ConnectTimeout=5 "$REMOTE_USER@$REMOTE_HOST" "echo 'Connection successful'" >/dev/null 2>&1; then
+if ssh -p "$REMOTE_PORT" -o ConnectTimeout=5 "$REMOTE_USER@$REMOTE_HOST" "echo 'Connection successful'" >/dev/null 2>&1; then
     print_success "SSH connection successful"
 else
-    print_error "Cannot connect to $REMOTE_USER@$REMOTE_HOST"
-    print_info "Please check your SSH credentials and VPS accessibility"
+    print_error "Cannot connect to $REMOTE_USER@$REMOTE_HOST on port $REMOTE_PORT"
+    print_info "Please check your SSH credentials, port, and VPS accessibility"
     exit 1
 fi
 echo ""
@@ -59,7 +60,7 @@ echo ""
 # Step 2: Confirm upload
 echo "This will upload files from:"
 echo "  Local:  $LOCAL_DIR"
-echo "  Remote: $REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR"
+echo "  Remote: $REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR (port $REMOTE_PORT)"
 echo ""
 read -p "Continue? (y/N): " -n 1 -r
 echo ""
@@ -100,12 +101,12 @@ echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_info "Running deployment script on server..."
     echo ""
-    ssh -t "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_DIR && bash deploy.sh"
+    ssh -p "$REMOTE_PORT" -t "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_DIR && bash deploy.sh"
 else
     print_info "Deployment script not executed"
     echo ""
     echo "To deploy manually, run:"
-    echo "  ssh $REMOTE_USER@$REMOTE_HOST"
+    echo "  ssh -p $REMOTE_PORT $REMOTE_USER@$REMOTE_HOST"
     echo "  cd $REMOTE_DIR"
     echo "  bash deploy.sh"
 fi
