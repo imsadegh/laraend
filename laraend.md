@@ -26,10 +26,12 @@
 ### Server Information
 - **VPS IP**: 5.182.44.108
 - **OS**: Ubuntu 24.04 LTS
+- **CPU**: 4 cores @ 2.5GHz (QEMU Virtual CPU)
+- **RAM**: 4GB
 - **Domain**: api.ithdp.ir
 - **Database**: PostgreSQL (same VPS)
 - **Web Server**: Nginx
-- **SSL**: Let's Encrypt (Certbot)
+- **SSL**: Cloudflare SSL (Full mode)
 
 ---
 
@@ -601,7 +603,7 @@ sudo systemctl restart nginx
 sudo nano /etc/php/8.4/fpm/pool.d/www.conf
 ```
 
-**Key configurations to modify:**
+**Optimized for VPS with 4 CPU cores (2.5GHz) and 4GB RAM:**
 ```ini
 user = deploy
 group = www-data
@@ -609,36 +611,110 @@ listen.owner = www-data
 listen.group = www-data
 listen.mode = 0660
 
-; Performance tuning (adjust based on your VPS resources)
+; Performance tuning for 4-core CPU with 4GB RAM
+; Each PHP-FPM process uses ~30-50MB RAM
+; Formula: (4GB - 1GB system - 512MB PostgreSQL - 512MB Redis) / 40MB ≈ 50 processes
+; Using 40 to leave adequate headroom
+
 pm = dynamic
-pm.max_children = 50
-pm.start_servers = 5
-pm.min_spare_servers = 5
-pm.max_spare_servers = 35
-pm.max_requests = 500
+pm.max_children = 40
+pm.start_servers = 8
+pm.min_spare_servers = 4
+pm.max_spare_servers = 12
+pm.max_requests = 1000
+
+; Process Idle Timeout
+pm.process_idle_timeout = 10s
+
+; Slow log for debugging performance issues
+slowlog = /var/log/php8.4-fpm-slow.log
+request_slowlog_timeout = 5s
+
+; Limits
+request_terminate_timeout = 300
+rlimit_files = 4096
+rlimit_core = 0
 ```
+
+**Configuration Explanation:**
+- `pm.max_children = 40`: Max 40 processes (40 × 40MB ≈ 1.6GB RAM)
+- `pm.start_servers = 8`: Start with 8 processes (2 per CPU core)
+- `pm.min_spare_servers = 4`: Keep 4 idle processes ready (1 per core)
+- `pm.max_spare_servers = 12`: Max 12 idle processes (3 per core)
+- `pm.max_requests = 1000`: Recycle after 1000 requests (prevents memory leaks)
 
 ### 6.2 Optimize PHP Configuration
 ```bash
 sudo nano /etc/php/8.4/fpm/php.ini
 ```
 
-**Key settings:**
+**Optimized settings for 4-core CPU with 4GB RAM:**
 ```ini
+; Basic Settings
 memory_limit = 256M
 upload_max_filesize = 100M
 post_max_size = 100M
 max_execution_time = 300
 max_input_time = 300
+max_input_vars = 3000
 date.timezone = Asia/Tehran
 
-; OPcache settings
+; Error Handling (Production)
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+error_log = /var/log/php8.4-fpm-error.log
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+
+; Performance Settings
+max_file_uploads = 20
+realpath_cache_size = 4096K
+realpath_cache_ttl = 600
+
+; OPcache Settings (Optimized for 4GB RAM)
+; Allocating 256MB for OPcache (6.4% of total RAM)
 opcache.enable=1
-opcache.memory_consumption=128
-opcache.interned_strings_buffer=8
-opcache.max_accelerated_files=10000
-opcache.revalidate_freq=2
+opcache.enable_cli=0
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=16
+opcache.max_accelerated_files=20000
+opcache.max_wasted_percentage=5
+opcache.validate_timestamps=0
+opcache.revalidate_freq=0
+opcache.save_comments=1
 opcache.fast_shutdown=1
+opcache.enable_file_override=1
+opcache.huge_code_pages=1
+
+; OPcache JIT (Just-In-Time compilation) for PHP 8.4
+; JIT provides significant performance boost
+opcache.jit_buffer_size=128M
+opcache.jit=1255
+
+; Session Settings
+session.gc_probability = 1
+session.gc_divisor = 1000
+session.gc_maxlifetime = 1440
+
+; Realpath Cache
+realpath_cache_size = 4M
+realpath_cache_ttl = 7200
+```
+
+**OPcache Configuration Explanation:**
+- `opcache.memory_consumption=256`: 256MB cache (holds ~20,000 files)
+- `opcache.interned_strings_buffer=16`: 16MB for string storage
+- `opcache.max_accelerated_files=20000`: Cache up to 20,000 files
+- `opcache.validate_timestamps=0`: Never check file timestamps (production)
+- `opcache.jit_buffer_size=128M`: JIT compilation buffer (PHP 8.4 feature)
+- `opcache.jit=1255`: Optimal JIT mode for web applications
+
+**Important**: After deployment, manually clear OPcache when code changes:
+```bash
+# Clear OPcache after code updates
+sudo systemctl reload php8.4-fpm
+# or
+php artisan opcache:clear  # if using opcache package
 ```
 
 ### 6.3 Restart PHP-FPM

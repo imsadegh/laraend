@@ -3,8 +3,8 @@
 ## Connection
 
 ```bash
-# SSH to VPS
-ssh deploy@5.182.44.108
+# SSH to VPS (custom port 2222)
+ssh deploy@5.182.44.108 -p 2222
 
 # Navigate to app
 cd /var/www/laraend
@@ -354,6 +354,7 @@ sudo nano /etc/redis/redis.conf
 - **API**: https://api.ithdp.ir
 - **Frontend**: https://ithdp.ir
 - **VPS IP**: 5.182.44.108
+- **SSH Port**: 2222
 
 ## Credentials
 
