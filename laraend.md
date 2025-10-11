@@ -484,7 +484,7 @@ server {
     return 301 https://$server_name$request_uri;
 }
 
-# HTTPS
+# HTTPS (Cloudflare handles SSL)
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
@@ -493,9 +493,9 @@ server {
     root /var/www/laraend/public;
     index index.php index.html;
 
-    # SSL Configuration (will be configured by Certbot)
-    ssl_certificate /etc/letsencrypt/live/api.ithdp.ir/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.ithdp.ir/privkey.pem;
+    # Use Cloudflare's SSL (no local certificates needed)
+    ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
+    ssl_certificate_key /etc/private/ssl-cert-snakeoil.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
