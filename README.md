@@ -2,13 +2,19 @@
 
 **Laraend** is the Laravel backend API for the HakimyarFusion Learning Management System (LMS).
 
+## 🚀 Live Status
+
+**Production URL**: https://api.ithdp.ir  
+**Status**: ✅ Live and Running  
+**Response**: `{"Laravel":"12.33.0"}`
+
 ## Project Information
 
 - **Framework**: Laravel 12.x
-- **PHP Version**: 8.4.13 (Development) / 8.3+ (Production)
+- **PHP Version**: 8.4.13 (Development) / 8.4 (Production)
 - **Database**: PostgreSQL
 - **Authentication**: JWT (tymon/jwt-auth)
-- **API Domain**: api.ithdp.ir
+- **API Domain**: api.ithdp.ir (via Cloudflare)
 
 ## Related Projects
 

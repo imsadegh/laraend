@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 APP_DIR="/var/www/laraend"
-PHP_FPM_SERVICE="php8.3-fpm"
+PHP_FPM_SERVICE="php8.4-fpm"
 BACKUP_DIR="/home/deploy/backups/deployments"
 DATE=$(date +"%Y%m%d_%H%M%S")
 

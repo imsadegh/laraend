@@ -25,12 +25,12 @@ cd /var/www/laraend
 
 ```bash
 # Restart all services
-sudo systemctl restart nginx php8.3-fpm postgresql redis-server
+sudo systemctl restart nginx php8.4-fpm postgresql redis-server
 sudo supervisorctl restart laraend-worker:*
 
 # Check service status
 sudo systemctl status nginx
-sudo systemctl status php8.3-fpm
+sudo systemctl status php8.4-fpm
 sudo systemctl status postgresql
 sudo systemctl status redis-server
 sudo supervisorctl status
@@ -85,11 +85,11 @@ tail -f /var/log/nginx/laraend-error.log
 tail -f /var/www/laraend/storage/logs/worker.log
 
 # PHP-FPM logs
-tail -f /var/log/php8.3-fpm.log
+tail -f /var/log/php8.4-fpm.log
 
 # System logs
 journalctl -u nginx -f
-journalctl -u php8.3-fpm -f
+journalctl -u php8.4-fpm -f
 ```
 
 ## Database
@@ -306,7 +306,7 @@ gunzip laraend_db_YYYYMMDD_HHMMSS.sql.gz
 sudo -u postgres psql laraend_db < laraend_db_YYYYMMDD_HHMMSS.sql
 
 # Restart services
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.4-fpm
 sudo supervisorctl restart laraend-worker:*
 ```
 
@@ -319,7 +319,7 @@ php artisan route:clear
 php artisan view:clear
 php artisan optimize:clear
 composer dump-autoload --optimize
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.4-fpm
 sudo supervisorctl restart laraend-worker:*
 ```
 
@@ -330,10 +330,10 @@ sudo supervisorctl restart laraend-worker:*
 sudo nano /etc/nginx/sites-available/laraend
 
 # PHP-FPM pool config
-sudo nano /etc/php/8.3/fpm/pool.d/www.conf
+sudo nano /etc/php/8.4/fpm/pool.d/www.conf
 
 # PHP configuration
-sudo nano /etc/php/8.3/fpm/php.ini
+sudo nano /etc/php/8.4/fpm/php.ini
 
 # Supervisor worker config
 sudo nano /etc/supervisor/conf.d/laraend-worker.conf

@@ -16,13 +16,13 @@ Use this checklist to ensure all deployment steps are completed successfully.
 - [ ] System updated (`apt update && apt upgrade`)
 - [ ] Timezone set to Asia/Tehran
 - [ ] Deploy user created and configured
-- [ ] PHP 8.3 installed with all extensions
+- [ ] PHP 8.4 installed with all extensions
 - [ ] PostgreSQL 16 installed and running
 - [ ] Redis installed and running
 - [ ] Nginx installed and running
 - [ ] Composer installed globally
 - [ ] Supervisor installed
-- [ ] Certbot installed
+- [ ] Self-signed SSL certificate generated
 
 ## Database Configuration
 
@@ -55,11 +55,12 @@ Use this checklist to ensure all deployment steps are completed successfully.
 
 ## SSL Configuration
 
-- [ ] DNS verified pointing to VPS
-- [ ] SSL certificate obtained via Certbot
+- [ ] DNS verified pointing to VPS (Cloudflare)
+- [ ] Self-signed SSL certificate generated
+- [ ] Cloudflare SSL/TLS mode set to "Full"
 - [ ] HTTPS working correctly
 - [ ] HTTP redirects to HTTPS
-- [ ] Auto-renewal tested
+- [ ] Cloudflare proxy enabled (orange cloud)
 
 ## Queue & Scheduler
 
@@ -94,7 +95,8 @@ Use this checklist to ensure all deployment steps are completed successfully.
 - [ ] All services status checked
 - [ ] Logs reviewed for errors
 - [ ] Queue jobs processing verified
-- [ ] SSL certificate validated
+- [ ] SSL working via Cloudflare
+- [ ] API responds with {"Laravel":"12.33.0"}
 
 ## Post-Deployment
 
@@ -131,7 +133,7 @@ ssh deploy@5.182.44.108
 cd /var/www/laraend
 
 # Restart all services
-sudo systemctl restart nginx php8.3-fpm postgresql redis-server
+sudo systemctl restart nginx php8.4-fpm postgresql redis-server
 sudo supervisorctl restart laraend-worker:*
 
 # View logs

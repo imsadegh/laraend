@@ -137,7 +137,12 @@ sudo systemctl enable supervisor
 sudo systemctl start supervisor
 ```
 
-### 2.7 Install Certbot for SSL
+### 2.7 SSL Setup (Optional - if not using Cloudflare)
+**Note**: If you're using Cloudflare (as in your setup), you don't need Let's Encrypt. Cloudflare handles the public SSL certificate, and you'll use a self-signed certificate between Cloudflare and Nginx.
+
+**For Cloudflare setup** (skip to Step 5 for configuration)
+
+**For Let's Encrypt** (if NOT using Cloudflare):
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 ```
@@ -412,7 +417,24 @@ If you encounter `Class "Faker\Factory" not found` error, it's because Faker is 
 
 ## Step 5: Configure Nginx
 
-### 5.1 Create Nginx Configuration
+### 5.1 Generate Self-Signed SSL Certificate
+Before configuring Nginx with SSL, generate a self-signed certificate for Cloudflare-to-server encryption:
+
+```bash
+# Generate self-signed certificate
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /etc/ssl/private/nginx-selfsigned.key \
+  -out /etc/ssl/certs/nginx-selfsigned.crt \
+  -subj "/C=IR/ST=Tehran/L=Tehran/O=Laraend/CN=api.ithdp.ir"
+
+# Set proper permissions
+sudo chmod 600 /etc/ssl/private/nginx-selfsigned.key
+sudo chmod 644 /etc/ssl/certs/nginx-selfsigned.crt
+```
+
+**Note**: This certificate is for the Cloudflare ↔ Server connection. Cloudflare handles the public-facing SSL certificate.
+
+### 5.2 Create Nginx Configuration
 ```bash
 sudo nano /etc/nginx/sites-available/laraend
 ```
@@ -493,9 +515,9 @@ server {
     root /var/www/laraend/public;
     index index.php index.html;
 
-    # Use Cloudflare's SSL (no local certificates needed)
-    ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
-    ssl_certificate_key /etc/private/ssl-cert-snakeoil.key;
+    # Self-signed SSL certificate (Cloudflare handles the real SSL)
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
@@ -555,7 +577,7 @@ server {
 }
 ```
 
-### 5.2 Enable Site and Test Configuration
+### 5.3 Enable Site and Test Configuration
 ```bash
 # Create symbolic link to enable site
 sudo ln -s /etc/nginx/sites-available/laraend /etc/nginx/sites-enabled/
@@ -626,44 +648,51 @@ sudo systemctl restart php8.4-fpm
 
 ---
 
-## Step 7: Configure SSL with Let's Encrypt
+## Step 7: Configure Cloudflare SSL
 
-### 7.1 DNS Configuration
-Before obtaining SSL certificate, ensure your domain `api.ithdp.ir` points to your VPS IP `5.182.44.108`.
+**Note**: Since you're using Cloudflare, SSL termination happens at Cloudflare's edge. Your server only needs a self-signed certificate for the Cloudflare ↔ Server connection.
 
-**In your DirectAdmin panel or DNS provider:**
-1. Add an A record: `api.ithdp.ir` → `5.182.44.108`
-2. Wait for DNS propagation (can take up to 48 hours, usually much faster)
-3. Verify DNS: `dig api.ithdp.ir` or `nslookup api.ithdp.ir`
+### 7.1 DNS Configuration in Cloudflare
+Ensure your domain `api.ithdp.ir` points to your VPS IP `5.182.44.108` in Cloudflare:
 
-### 7.2 Obtain SSL Certificate
+**In your Cloudflare dashboard:**
+1. Go to DNS settings
+2. Add an A record: `api` → `5.182.44.108`
+3. Ensure the proxy status (orange cloud) is **enabled** for SSL termination
+4. Wait for DNS propagation (usually instant with Cloudflare)
+5. Verify DNS: `dig api.ithdp.ir` or `nslookup api.ithdp.ir`
+
+### 7.2 Configure Cloudflare SSL/TLS Settings
+**In Cloudflare dashboard:**
+1. Go to **SSL/TLS** → **Overview**
+2. Set encryption mode to **Full**
+   - This allows Cloudflare to connect to your server using the self-signed certificate
+3. Go to **SSL/TLS** → **Edge Certificates**
+4. Enable these features:
+   - ✅ Always Use HTTPS
+   - ✅ Automatic HTTPS Rewrites
+   - ✅ Minimum TLS Version: TLS 1.2
+
+### 7.3 Verify SSL Configuration
+The self-signed certificate was already created in **Step 5.1** using these commands:
 ```bash
-# First, temporarily modify Nginx config to work without SSL
-sudo nano /etc/nginx/sites-available/laraend
-
-# Comment out SSL-related lines temporarily, then:
-sudo nginx -t
-sudo systemctl reload nginx
-
-# Obtain SSL certificate
-sudo certbot --nginx -d api.ithdp.ir
-
-# Follow the prompts:
-# - Enter email address
-# - Agree to terms
-# - Choose whether to redirect HTTP to HTTPS (choose Yes)
-
-# Certbot will automatically update your Nginx configuration
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /etc/ssl/private/nginx-selfsigned.key \
+  -out /etc/ssl/certs/nginx-selfsigned.crt \
+  -subj "/C=IR/ST=Tehran/L=Tehran/O=Laraend/CN=api.ithdp.ir"
 ```
 
-### 7.3 Auto-Renewal Setup
-```bash
-# Test auto-renewal
-sudo certbot renew --dry-run
+Verify everything is working:
 
-# Certbot creates a systemd timer for auto-renewal
-sudo systemctl status certbot.timer
+```bash
+# Test HTTPS connection
+curl -I https://api.ithdp.ir
+
+# Should return: HTTP/2 200
+# With response: {"Laravel":"12.33.0"}
 ```
+
+**Your setup is complete!** Cloudflare handles all public SSL, and the self-signed certificate secures the Cloudflare ↔ Server connection.
 
 ---
 
