@@ -21,7 +21,7 @@ NC='\033[0m' # No Color
 LOCAL_DIR="/Users/sadeghmbp/Downloads/myDocuments/_develop/_fs_dev/hakimyarFusion/laraend"
 REMOTE_USER="deploy"
 REMOTE_HOST="5.182.44.108"
-REMOTE_PORT=2222
+REMOTE_PORT=3031
 REMOTE_DIR="/var/www/laraend"
 
 # Functions
@@ -90,7 +90,6 @@ rsync -avz --progress \
     --exclude='.vscode' \
     --exclude='tests/' \
     --exclude='phpunit.xml' \
-    --exclude='deploy.sh' \
     --exclude='upload-to-server.sh' \
     -e "ssh -p $REMOTE_PORT" \
     "$LOCAL_DIR/" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/"
@@ -104,7 +103,7 @@ echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_info "Running deployment script on server..."
     echo ""
-    ssh -p "$REMOTE_PORT" -t "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_DIR && bash deploy.sh"
+    ssh -p "$REMOTE_PORT" -t "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_DIR && pwd && ls -la && bash deploy.sh"
 else
     print_info "Deployment script not executed"
     echo ""

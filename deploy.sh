@@ -48,6 +48,9 @@ if [ ! -f "$APP_DIR/artisan" ]; then
     exit 1
 fi
 
+# Ensure we're in the correct directory
+cd "$APP_DIR"
+print_info "Current directory: $(pwd)"
 print_info "Starting deployment process..."
 echo ""
 
