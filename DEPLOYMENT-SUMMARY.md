@@ -8,7 +8,7 @@ I've prepared comprehensive deployment documentation and helper scripts for depl
 
 1. **laraend.md** - Complete deployment guide (15 steps)
    - Server setup and configuration
-   - Software installation (PHP 8.3, PostgreSQL 16, Redis, Nginx)
+   - Software installation (PHP 8.4, PostgreSQL 16, Redis, Nginx)
    - SSL configuration with Let's Encrypt
    - Queue workers with Supervisor
    - Security hardening
@@ -220,11 +220,11 @@ Already configured in Laravel to accept requests from:
 tail -f /var/www/laraend/storage/logs/laravel.log
 
 # Check all services
-sudo systemctl status nginx php8.3-fpm postgresql redis-server
+sudo systemctl status nginx php8.4-fpm postgresql redis-server
 sudo supervisorctl status
 
 # Restart all services
-sudo systemctl restart nginx php8.3-fpm
+sudo systemctl restart nginx php8.4-fpm
 sudo supervisorctl restart laraend-worker:*
 ```
 
@@ -233,8 +233,8 @@ sudo supervisorctl restart laraend-worker:*
 ### Common Issues
 
 **502 Bad Gateway**
-- Check PHP-FPM: `sudo systemctl status php8.3-fpm`
-- Restart: `sudo systemctl restart php8.3-fpm`
+- Check PHP-FPM: `sudo systemctl status php8.4-fpm`
+- Restart: `sudo systemctl restart php8.4-fpm`
 
 **Database Connection Failed**
 - Verify PostgreSQL running: `sudo systemctl status postgresql`

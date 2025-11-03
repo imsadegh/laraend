@@ -342,7 +342,7 @@ php artisan config:clear
 php artisan route:clear
 
 # Restart PHP-FPM
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.4-fpm
 ```
 
 ### Queue Jobs Not Processing
