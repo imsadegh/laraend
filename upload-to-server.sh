@@ -97,13 +97,20 @@ rsync -avz --progress \
 print_success "Files uploaded successfully"
 echo ""
 
-# Step 4: Ask if user wants to run deployment script
+# Step 4: Upload deployment script
+print_info "Uploading deployment script..."
+scp -P "$REMOTE_PORT" "$LOCAL_DIR/deploy.sh" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/"
+ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "chmod +x $REMOTE_DIR/deploy.sh"
+print_success "Deployment script uploaded"
+echo ""
+
+# Step 5: Ask if user wants to run deployment script
 read -p "Run deployment script on server? (y/N): " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_info "Running deployment script on server..."
     echo ""
-    ssh -p "$REMOTE_PORT" -t "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_DIR && pwd && ls -la && bash deploy.sh"
+    ssh -p "$REMOTE_PORT" -t "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_DIR && bash deploy.sh"
 else
     print_info "Deployment script not executed"
     echo ""

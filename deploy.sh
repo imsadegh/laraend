@@ -69,14 +69,20 @@ tar -czf "$BACKUP_FILE" \
 print_success "Backup created: $BACKUP_FILE"
 echo ""
 
-# Step 2: Put application in maintenance mode
-print_info "Enabling maintenance mode..."
+# Step 2: Install/Update dependencies first (before maintenance mode)
+print_info "Installing Composer dependencies..."
 cd "$APP_DIR"
-php artisan down --render="errors::503" --retry=60
-print_success "Maintenance mode enabled"
+composer install --no-dev --optimize-autoloader --no-interaction
+print_success "Dependencies installed"
 echo ""
 
-# Step 3: Pull latest changes (if using git)
+# Step 3: Put application in maintenance mode
+print_info "Enabling maintenance mode..."
+php artisan down --render="errors::503" --retry=60 2>/dev/null || true
+print_success "Maintenance mode enabled (or skipped if already down)"
+echo ""
+
+# Step 4: Pull latest changes (if using git)
 if [ -d "$APP_DIR/.git" ]; then
     print_info "Pulling latest changes from git..."
     git pull origin main
@@ -84,38 +90,36 @@ if [ -d "$APP_DIR/.git" ]; then
     echo ""
 fi
 
-# Step 4: Install/Update dependencies
-print_info "Installing Composer dependencies..."
-composer install --no-dev --optimize-autoloader --no-interaction
-print_success "Dependencies installed"
-echo ""
-
 # Step 5: Clear caches
 print_info "Clearing application caches..."
-php artisan config:clear
-php artisan cache:clear
-php artisan route:clear
-php artisan view:clear
+cd "$APP_DIR"
+php artisan config:clear || true
+php artisan cache:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
 print_success "Caches cleared"
 echo ""
 
 # Step 6: Run migrations
 print_info "Running database migrations..."
+cd "$APP_DIR"
 php artisan migrate --force
 print_success "Migrations completed"
 echo ""
 
-# Step 7: Rebuild caches
+# Step 7: Optimize autoloader
+print_info "Optimizing autoloader..."
+cd "$APP_DIR"
+composer dump-autoload --optimize
+print_success "Autoloader optimized"
+echo ""
+
+# Step 8: Rebuild caches
 print_info "Rebuilding caches..."
+cd "$APP_DIR"
 php artisan config:cache
 php artisan route:cache
 print_success "Caches rebuilt"
-echo ""
-
-# Step 8: Optimize autoloader
-print_info "Optimizing autoloader..."
-composer dump-autoload --optimize
-print_success "Autoloader optimized"
 echo ""
 
 # Step 9: Set permissions
@@ -133,8 +137,12 @@ print_success "PHP-FPM restarted"
 echo ""
 
 print_info "Restarting queue workers..."
-sudo supervisorctl restart laraend-worker:*
-print_success "Queue workers restarted"
+if sudo supervisorctl status laraend-worker:* &>/dev/null; then
+    sudo supervisorctl restart laraend-worker:*
+    print_success "Queue workers restarted"
+else
+    print_info "Queue workers not configured yet (run Step 8 from laraend.md to set up)"
+fi
 echo ""
 
 # Step 11: Disable maintenance mode

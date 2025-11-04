@@ -89,3 +89,4 @@ After running the manual steps, you should see:
 - Laravel commands working without permission errors
 - Services running properly
 - API accessible at https://api.ithdp.ir
+
