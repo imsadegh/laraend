@@ -72,12 +72,25 @@ Use this checklist to ensure all deployment steps are completed successfully.
 
 ## Security
 
+### Server Security
 - [ ] UFW firewall enabled
 - [ ] Firewall rules configured (22, 80, 443)
 - [ ] Redis password set (if needed)
 - [ ] PostgreSQL secured (localhost only)
 - [ ] `.env` file permissions secured (600)
 - [ ] Debug mode disabled in production
+
+### Application Security
+- [ ] No hardcoded credentials in source code
+- [ ] JWT_SECRET generated and set in `.env`
+- [ ] CORS configuration restricted to API routes (`config/cors.php`)
+- [ ] CORS `paths` set to `['api/*', 'sanctum/csrf-cookie']`
+- [ ] CORS `allowed_headers` set to specific headers (not `['*']`)
+- [ ] CORS `allowed_origins` set to `FRONTEND_URL` from environment
+- [ ] CORS `supports_credentials` set to `true` for JWT auth
+- [ ] No console.log statements exposing JWT tokens in frontend code
+- [ ] Frontend config uses `VITE_API_BASE_URL` environment variable
+- [ ] Production build verified to use correct API URL (not localhost)
 
 ## Monitoring & Backups
 
@@ -89,6 +102,7 @@ Use this checklist to ensure all deployment steps are completed successfully.
 
 ## Testing
 
+### Functionality Testing
 - [ ] API health check endpoint tested
 - [ ] Authentication endpoints tested
 - [ ] CORS configuration verified
@@ -97,6 +111,16 @@ Use this checklist to ensure all deployment steps are completed successfully.
 - [ ] Queue jobs processing verified
 - [ ] SSL working via Cloudflare
 - [ ] API responds with {"Laravel":"12.33.0"}
+
+### Security Testing
+- [ ] CORS preflight test: `curl -X OPTIONS https://api.ithdp.ir/api/auth/login -H "Origin: https://app.ithdp.ir" -v`
+- [ ] Verify 200 OK response with CORS headers
+- [ ] Login test with phone number format (09xxxxxxxxx)
+- [ ] Verify JWT token received (check response, not console)
+- [ ] Verify browser console doesn't show exposed JWT tokens
+- [ ] Verify frontend uses correct production API URL
+- [ ] Test unauthorized access returns proper 401 errors
+- [ ] Verify CORS doesn't allow unauthorized origins
 
 ## Post-Deployment
 
