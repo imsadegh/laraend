@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //     \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         // ]);
 
+        // Ensure CORS is applied early in the API middleware stack to handle preflight requests
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'role'     => \App\Http\Middleware\RoleMiddleware::class, // Add this line
