@@ -18,6 +18,8 @@ use App\Http\Controllers\ExamAttemptAnswerController;
 use App\Http\Controllers\ExamScoreController;
 use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\CourseVideoLinkController;
+use App\Http\Controllers\VideoProxyController;
 
 
 Route::middleware(['auth:api'])->get('/user', function (Request $request) {
@@ -55,6 +57,28 @@ Route::middleware('auth:api')->group(function () {
         ->where('module', '[0-9]+');
     Route::delete('/modules/{module}', [CourseModuleController::class, 'destroy'])
         ->where('module', '[0-9]+');
+});
+
+// Video Link Management (Phase 1)
+Route::middleware('auth:api')->group(function () {
+    // Instructor endpoints - add, update, delete videos
+    Route::post('/courses/{course}/modules/{module}/add-video', [CourseVideoLinkController::class, 'addVideo'])
+        ->where('course', '[0-9]+')
+        ->where('module', '[0-9]+');
+    Route::put('/courses/{course}/modules/{module}/video', [CourseVideoLinkController::class, 'updateVideo'])
+        ->where('course', '[0-9]+')
+        ->where('module', '[0-9]+');
+    Route::delete('/courses/{course}/modules/{module}/video', [CourseVideoLinkController::class, 'deleteVideo'])
+        ->where('course', '[0-9]+')
+        ->where('module', '[0-9]+');
+
+    // Student endpoint - get stream token
+    Route::get('/courses/{course}/modules/{module}/video-stream-token', [CourseVideoLinkController::class, 'getStreamToken'])
+        ->where('course', '[0-9]+')
+        ->where('module', '[0-9]+');
+
+    // Video proxy endpoint - serves video via 302 redirect
+    Route::get('/videos/stream', [VideoProxyController::class, 'stream']);
 });
 
 // Instructor, Categories, and Prerequisites
@@ -116,7 +140,7 @@ Route::middleware('auth:api')->group(function () {
     // list / filter all attempts (instructor & admin)
     Route::get('/exam-attempts', [ExamAttemptController::class, 'index']);
 
-    // extra read-only endpoint for “next unanswered question”
+    // extra read-only endpoint for "next unanswered question"
     Route::get(
         'exams/{exam}/attempts/{attempt}/next',
         [ExamAttemptController::class, 'next']
