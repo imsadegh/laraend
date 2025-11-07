@@ -72,9 +72,8 @@ Route::middleware('auth:api')->group(function () {
         ->where('course', '[0-9]+')
         ->where('module', '[0-9]+');
 
-    // Student endpoint - get stream token (with rate limiting to prevent abuse)
+    // Student endpoint - get stream token
     Route::get('/courses/{course}/modules/{module}/video-stream-token', [CourseVideoLinkController::class, 'getStreamToken'])
-        ->middleware('throttle:60,1') // 60 requests per minute
         ->where('course', '[0-9]+')
         ->where('module', '[0-9]+');
 

@@ -33,8 +33,9 @@ return [
      * URL validation settings
      */
     'validation' => [
-        // Timeout for HEAD request when validating URL accessibility
-        'head_request_timeout' => 10,
+        // Timeout for HEAD request when validating URL accessibility (3 seconds prevents blocking)
+        // If external service is slow, validation fails gracefully without blocking instructor
+        'head_request_timeout' => 3,
         // Require HTTPS for all video URLs (security)
         'require_https' => true,
     ],

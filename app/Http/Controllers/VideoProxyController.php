@@ -53,8 +53,22 @@ class VideoProxyController extends Controller
                 return response()->json(['error' => 'Failed to decrypt video URL.'], 500);
             }
 
-            // Optional: Re-validate user is still enrolled in course
-            // (You can add this check if needed, using $decoded->get('user_id') and $decoded->get('course_id'))
+            // Re-validate user is still enrolled in course
+            // Prevents access after enrollment is revoked or course access is suspended
+            $userId = $decoded->get('user_id');
+            $courseId = $decoded->get('course_id');
+
+            if ($userId && $courseId) {
+                $isEnrolled = \DB::table('enrollments')
+                    ->where('user_id', $userId)
+                    ->where('course_id', $courseId)
+                    ->where('status', 'enrolled')
+                    ->exists();
+
+                if (!$isEnrolled) {
+                    return response()->json(['error' => 'Access revoked. You are no longer enrolled in this course.'], 403);
+                }
+            }
 
             // Return 302 redirect to actual video URL
             // This way the URL is never exposed in the response body, only in the Location header
@@ -68,7 +82,8 @@ class VideoProxyController extends Controller
         } catch (JWTException $e) {
             return response()->json(['error' => 'Invalid or expired token.'], 401);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to process stream token: ' . $e->getMessage()], 500);
+            \Log::error('Video stream failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to process stream token.'], 500);
         }
     }
 }
