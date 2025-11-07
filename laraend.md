@@ -1415,6 +1415,25 @@ php artisan migrate:fresh --force --seed
 - `PUT /api/modules/{id}` - Update module
 - `DELETE /api/modules/{id}` - Delete module
 
+### Phase 1: Secure Video Link Management (2025-11-05+)
+- `POST /api/courses/{course}/modules/{module}/add-video` - Add encrypted video URL (instructor/admin only)
+  - Request: `{ video_url, video_title, estimated_duration_seconds, video_source }`
+  - Response: `{ video_id, module_id, title, estimated_duration_seconds, video_source, added_at }`
+  - Validation: HTTPS URL, domain whitelist, URL accessibility check
+  - Encryption: AES-256-CBC stored in database
+- `PUT /api/courses/{course}/modules/{module}/video` - Update existing video link (instructor/admin only)
+  - Same request/response as add-video, updates existing encrypted_video_url
+- `DELETE /api/courses/{course}/modules/{module}/video` - Delete video link (instructor/admin only)
+  - No request body, returns 204 No Content on success
+- `GET /api/courses/{course}/modules/{module}/video-stream-token` - Get temporary stream token (enrolled students only)
+  - Response: `{ stream_token: "eyJ0eXAi...", expires_in: 300, video_title: "..." }`
+  - Token TTL: 5 minutes (300 seconds)
+  - Token contains encrypted URL payload, not plain text
+- `GET /api/videos/stream?token={jwt}` - Video proxy with 302 redirect (all authenticated users with valid token)
+  - Returns: HTTP 302 redirect to actual video URL
+  - Validation: JWT signature, expiry check, user enrollment verification
+  - URL never exposed in JSON response (secure against network inspection)
+
 ### Assignments
 - `GET /api/instructor/assignments` - List instructor assignments
 - `POST /api/courses/{course}/assignments` - Create assignment
@@ -1591,8 +1610,298 @@ composer update --no-dev
 
 ---
 
-**Last Updated**: October 10, 2025
+## Phase 1: Secure Video Link Management (Implementation Guide)
+
+### Overview
+
+Phase 1 implements secure video link management for external video sources (YouTube, Vimeo, CDN, etc.) without storing video files on the VPS. Video URLs are encrypted in the database and never exposed via JSON responses to prevent URL copying or unauthorized streaming.
+
+### Architecture
+
+#### 1. Encryption Service
+**File**: `app/Services/EncryptionService.php`
+
+Provides AES-256-CBC encryption/decryption using Laravel's built-in Crypt facade:
+```php
+// Encrypt URL when saving
+$encrypted = $encryptionService->encryptUrl($videoUrl);
+
+// Decrypt URL when needed
+$url = $encryptionService->decryptUrl($encrypted);
+```
+
+**Why Laravel Crypt?**
+- Uses APP_KEY from `.env` (already generated)
+- AES-256-CBC encryption with authentication
+- Secure serialization built-in
+- Decryption fails gracefully if key changes
+
+#### 2. Domain Whitelist Configuration
+**File**: `config/videos.php`
+
+Restrict video URLs to trusted domains:
+```php
+'allowed_domains' => [
+    'youtube.com',
+    'youtu.be',
+    'vimeo.com',
+    'cdn.example.com',
+    'file-examples.com',
+],
+'token_ttl_minutes' => 5,
+```
+
+Add new domains and run `php artisan config:clear` to apply changes.
+
+#### 3. Video Link Management Controller
+**File**: `app/Http/Controllers/CourseVideoLinkController.php`
+
+Four endpoints for managing video links:
+
+**3.1 Add Video** - `POST /api/courses/{course}/modules/{module}/add-video`
+- Validates: HTTPS URL, domain whitelist, URL accessibility (HEAD request)
+- Encrypts URL and stores in database
+- Returns: video_id, title, duration (NOT the actual URL)
+- Authorization: Instructor/Admin of course only
+
+**3.2 Update Video** - `PUT /api/courses/{course}/modules/{module}/video`
+- Same validation as add, updates existing encrypted URL
+- Authorization: Instructor/Admin of course only
+
+**3.3 Delete Video** - `DELETE /api/courses/{course}/modules/{module}/video`
+- Removes encrypted_video_url from module
+- Authorization: Instructor/Admin of course only
+
+**3.4 Get Stream Token** - `GET /api/courses/{course}/modules/{module}/video-stream-token`
+- Validates: User is enrolled in course (status='enrolled')
+- Generates temporary JWT token with 5-minute TTL
+- Token payload contains encrypted URL (NOT plain text)
+- Returns: stream_token, expires_in, video_title
+- Authorization: Enrolled students only
+
+#### 4. Video Proxy Controller
+**File**: `app/Http/Controllers/VideoProxyController.php`
+
+Endpoint: `GET /api/videos/stream?token={jwt}`
+
+Process:
+1. Validate JWT token (signature, expiry, purpose='video_stream')
+2. Extract encrypted URL from token payload
+3. Decrypt URL using EncryptionService
+4. Verify user is still enrolled in course
+5. Return HTTP 302 redirect to actual video URL
+
+**Why 302 redirect?**
+- Original video URL never exposed in JSON response
+- Browser follows redirect transparently
+- Network inspection shows redirect, not final URL
+- Mobile apps handle redirects seamlessly
+- Prevents URL copying from API responses
+
+#### 5. CourseModule Model
+**File**: `app/Models/CourseModule.php`
+
+Eloquent accessors/mutators for transparent encryption:
+```php
+protected function encryptedVideoUrl(): Attribute {
+    return Attribute::make(
+        get: fn ($value) => $value ? Crypt::decrypt($value) : null,
+        set: fn ($value) => $value ? Crypt::encrypt($value) : null,
+    );
+}
+```
+
+**Effect**: Controllers access `$module->encrypted_video_url` and encryption/decryption happens automatically.
+
+#### 6. Database Schema
+**Migration**: `database/migrations/2025_11_05_add_video_fields_to_course_modules_table.php`
+
+New columns added to `course_modules` table:
+- `encrypted_video_url` (text, nullable) - AES-256 encrypted URL
+- `video_title` (string, nullable) - Display title
+- `estimated_duration_seconds` (integer, nullable) - Duration estimate
+- `video_source` (string, nullable) - Source type ('youtube', 'vimeo', 'external', etc.)
+- `video_added_at` (timestamp, nullable) - When video was added
+- `video_added_by` (foreign key, nullable) - User who added video
+- `video_metadata` (json, nullable) - Thumbnail URL, transcripts, etc.
+
+Index on `video_source` for filtering by source type.
+
+#### 7. Test Data & Seeders
+**File**: `database/seeders/CourseModuleVideoSeeder.php`
+
+Creates realistic test data:
+- YouTube video: `https://www.youtube.com/watch?v=...`
+- Vimeo video: `https://vimeo.com/...`
+- External CDN: `https://cdn.example.com/videos/...`
+- Multiple videos per module across different sources
+- Includes PostgreSQL sequence reset for ID consistency
+
+**Run seeders**:
+```bash
+php artisan db:seed --class=CourseModuleVideoSeeder
+```
+
+### Security Implementation Details
+
+#### URL Encryption at Rest
+- All video URLs stored encrypted in database
+- Direct SQL queries return encrypted data (unreadable)
+- Only CourseModule model accessor decrypts for application use
+
+#### Token-Based Access
+- Stream tokens contain encrypted URL, not plain text
+- Token validates user enrollment at generation time
+- Tokens expire after 5 minutes (configurable in config/videos.php)
+- Each token is single-use (server validates timing on proxy endpoint)
+
+#### Server-Side Validation
+- Every video request validates:
+  - JWT signature and expiry
+  - User enrollment status (checked at stream token generation AND proxy endpoint)
+  - Domain whitelist at URL add/update time
+- Re-checking enrollment on proxy ensures access is revoked if student unenrolls
+
+#### URL Validation
+- Only HTTPS URLs accepted (HTTP rejected for security)
+- HEAD request verifies URL is accessible and returns video MIME type
+- Domain must be in whitelist
+- Applied at add/update time, not every request (performance optimization)
+
+#### Secure Redirect Pattern
+- Proxy endpoint returns HTTP 302 redirect
+- Original video URL never included in JSON response body
+- Network inspection shows redirect chain, not final URL in response
+- Browser/mobile app follows redirect transparently
+
+### Testing
+
+**Test File**: `tests/Feature/VideoLinkManagementTest.php`
+
+Covers 20+ scenarios:
+- URL validation (HTTPS only, domain whitelist, accessibility)
+- Encryption/decryption correctness
+- Authorization (instructor only for add/update/delete, enrolled only for stream token)
+- Token generation and validation
+- Token expiry (5-minute TTL)
+- Proxy endpoint redirect behavior
+- Error handling (404, 403, 422, 401 status codes)
+
+**Run tests**:
+```bash
+php artisan test tests/Feature/VideoLinkManagementTest.php
+```
+
+### Integration with Frontend & Mobile
+
+#### Vueend (Vue 3 Frontend)
+**File**: `src/services/VideoService.js`
+- API client for video endpoints
+- Handles token caching during 5-minute TTL window
+
+**File**: `src/components/VideoManagement.vue`
+- Instructor form for adding/editing video URLs
+- Real-time validation feedback
+
+#### Hekmat Sara (Flutter Mobile)
+**File**: `lib/services/video_service.dart`
+- Generates stream tokens from modules
+- Constructs proxy URLs with token parameter
+
+**File**: `lib/screens/video_player_screen.dart`
+- Requests stream token before video playback
+- Plays video via proxy endpoint URL
+- Handles token expiry with automatic refresh
+
+### Configuration
+
+#### Environment Variables
+
+No new env variables required. Existing configuration used:
+- `APP_KEY` - Used for encryption (generated by php artisan key:generate)
+- `JWT_SECRET` - Used for stream token generation
+
+#### Whitelist Management
+
+Edit `config/videos.php` to modify allowed domains:
+```php
+'allowed_domains' => [
+    'youtube.com',
+    'youtu.be',
+    'vimeo.com',
+    'example.cdn.com',  // Add new domain here
+],
+```
+
+Clear config cache after changes:
+```bash
+php artisan config:clear
+```
+
+#### Token TTL
+
+Modify in `config/videos.php`:
+```php
+'token_ttl_minutes' => 5,  // Change to 10 for 10-minute tokens
+```
+
+### Deployment Checklist
+
+- [ ] Run migration: `php artisan migrate`
+- [ ] Clear config cache: `php artisan config:clear`
+- [ ] Run seeders (optional): `php artisan db:seed --class=CourseModuleVideoSeeder`
+- [ ] Run tests: `php artisan test tests/Feature/VideoLinkManagementTest.php`
+- [ ] Configure whitelist domains in `config/videos.php`
+- [ ] Frontend: Update VideoService with production API URL
+- [ ] Mobile: Update video_service.dart with production API URL
+- [ ] Test video flow end-to-end:
+  1. Instructor adds video
+  2. Student enrolls in course
+  3. Student requests stream token
+  4. Mobile/frontend plays video via proxy endpoint
+
+### Known Limitations & Future Enhancements
+
+**Phase 1 Scope**:
+- Supports external video URLs only (YouTube, Vimeo, CDN)
+- No video upload/hosting on VPS
+- No deep linking (Phase 2 feature)
+- No watch time tracking (Phase 3 feature)
+
+**Future Phases**:
+- Phase 2: Deep linking with timestamp support
+- Phase 3: Watch time tracking and progress resumption
+- Phase 4: Adaptive bitrate streaming and CDN integration
+- Phase 5: Video analytics and engagement metrics
+
+### Troubleshooting
+
+**"Domain not whitelisted" error**:
+- Add domain to `config/videos.php`
+- Run `php artisan config:clear`
+- Verify domain is HTTPS
+
+**Stream token returns null**:
+- Check user enrollment: `SELECT * FROM enrollments WHERE user_id=X AND course_id=Y AND status='enrolled';`
+- Verify JWT_SECRET is set correctly
+
+**Video URL visible in Network tab**:
+- This is expected (browser follows 302 redirect)
+- Ensure URL is NOT returned in JSON response body
+- Verify VideoProxyController returns `redirect()` not JSON
+
+**Encrypted URLs appear corrupted**:
+- Never read encrypted_video_url directly from database
+- Always access through CourseModule model: `$module->encrypted_video_url`
+- Model accessor automatically decrypts
+
+See `sessions/tasks/h-implement-video-course-management/1-backend-video-upload.md` for complete implementation details and discovery notes.
+
+---
+
+**Last Updated**: November 6, 2025
 **Laravel Version**: 12.x
 **PHP Version**: 8.4+
 **PostgreSQL Version**: 16
+**Phase 1 Status**: Complete (2025-11-05 to 2025-11-06)
 
