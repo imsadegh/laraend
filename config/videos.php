@@ -13,6 +13,7 @@ return [
         'video.example.com',
         'file-examples.com', // Test video domain
         'devstreaming-cdn.apple.com', // Apple HLS test streams
+        'download.samplelib.com', // Verified sample videos
     ],
 
     /**
