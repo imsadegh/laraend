@@ -5,14 +5,11 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use App\Models\CourseModule;
-use App\Services\EncryptionService;
 
 class CourseModuleVideoSeeder extends Seeder
 {
     public function run(): void
     {
-        $encryptionService = app(EncryptionService::class);
-
         // Reset the sequence for PostgreSQL to prevent ID conflicts
         try {
             $maxId = DB::table('course_modules')->max('id') ?? 0;
@@ -25,7 +22,7 @@ class CourseModuleVideoSeeder extends Seeder
         $module2 = CourseModule::find(2);
         if ($module2) {
             $module2->update([
-                'encrypted_video_url' => $encryptionService->encryptUrl('https://youtu.be/dQw4w9WgXcQ'),
+                'encrypted_video_url' => 'https://youtu.be/dQw4w9WgXcQ', // Plain URL - model mutator will encrypt
                 'video_title' => 'آموزش مقدماتی Vue.js',
                 'estimated_duration_seconds' => 420, // 7 minutes
                 'video_source' => 'youtube',
@@ -56,7 +53,7 @@ class CourseModuleVideoSeeder extends Seeder
             'view_count' => 0,
             'prerequisite_modules' => json_encode([2]),
             'rating' => 0.00,
-            'encrypted_video_url' => $encryptionService->encryptUrl('https://vimeo.com/123456789'),
+            'encrypted_video_url' => 'https://vimeo.com/123456789', // Plain URL - model mutator will encrypt
             'video_title' => 'کمپوننت‌های پیشرفته در Vue',
             'estimated_duration_seconds' => 900,
             'video_source' => 'vimeo',
@@ -86,7 +83,7 @@ class CourseModuleVideoSeeder extends Seeder
             'view_count' => 0,
             'prerequisite_modules' => null,
             'rating' => 4.5,
-            'encrypted_video_url' => $encryptionService->encryptUrl('https://file-examples.com/wp-content/storage/2017/04/file_example_MP4_480_1_5MG.mp4'),
+            'encrypted_video_url' => 'https://file-examples.com/wp-content/storage/2017/04/file_example_MP4_480_1_5MG.mp4', // Plain URL
             'video_title' => 'دوره کامل Vue.js - قسمت 1',
             'estimated_duration_seconds' => 7200,
             'video_source' => 'external',
@@ -98,38 +95,5 @@ class CourseModuleVideoSeeder extends Seeder
                 'language' => 'persian',
             ]),
         ]);
-
-        // Add Laravel video for course 2 if it exists
-        $course2 = \App\Models\Course::find(2);
-        if ($course2) {
-            CourseModule::create([
-                'course_id' => 2,
-                'created_by' => 2,
-                'title' => 'مقدمه به Laravel',
-                'type' => 'video',
-                'content_url' => null,
-                'description' => 'شروع سفر خود با Laravel',
-                'article_content' => null,
-                'module_data' => null,
-                'position' => 1,
-                'visible' => true,
-                'release_date' => now(),
-                'is_mandatory' => true,
-                'estimated_duration_minutes' => 45,
-                'view_count' => 0,
-                'prerequisite_modules' => null,
-                'rating' => 0.00,
-                'encrypted_video_url' => $encryptionService->encryptUrl('https://youtu.be/w7ysrFQ3kV0'),
-                'video_title' => 'Laravel برای مبتدیان',
-                'estimated_duration_seconds' => 2700,
-                'video_source' => 'youtube',
-                'video_added_by' => 2,
-                'video_added_at' => now(),
-                'video_metadata' => json_encode([
-                    'playlist' => 'Laravel Fundamentals',
-                    'instructor' => 'Taylor Otwell',
-                ]),
-            ]);
-        }
     }
 }
