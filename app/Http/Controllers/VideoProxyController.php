@@ -59,7 +59,7 @@ class VideoProxyController extends Controller
             $courseId = $decoded->get('course_id');
 
             if ($userId && $courseId) {
-                $isEnrolled = \DB::table('enrollments')
+                $isEnrolled = \DB::table('course_enrollments')
                     ->where('user_id', $userId)
                     ->where('course_id', $courseId)
                     ->where('status', 'enrolled')
