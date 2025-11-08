@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use App\Constants\RoleConstant;
 
 class CourseVideoLinkController extends Controller
 {
@@ -124,7 +125,9 @@ class CourseVideoLinkController extends Controller
             ];
 
             $ttl = config('videos.token_ttl_minutes', 5);
-            $token = JWTAuth::claims($payload)->setTTL($ttl)->fromUser($user);
+            // Create JWT token with custom claims and TTL
+            $customClaims = array_merge($payload, ['exp' => now()->addMinutes($ttl)->timestamp]);
+            $token = JWTAuth::claims($customClaims)->fromUser($user);
 
             return response()->json([
                 'stream_token' => $token,
@@ -276,12 +279,12 @@ class CourseVideoLinkController extends Controller
     private function isInstructorOfCourse(User $user, Course $course): bool
     {
         // Admin can do anything
-        if ($user->role_id == 1) {
+        if ($user->role_id == RoleConstant::ADMIN) {
             return true;
         }
 
         // Instructor (role_id = 2) must be the creator or assigned to the course
-        if ($user->role_id == 2) {
+        if ($user->role_id == RoleConstant::INSTRUCTOR) {
             return $course->created_by == $user->id;
         }
 
@@ -294,12 +297,12 @@ class CourseVideoLinkController extends Controller
     private function isEnrolledInCourse(User $user, Course $course): bool
     {
         // Admin can access any course
-        if ($user->role_id == 1) {
+        if ($user->role_id == RoleConstant::ADMIN) {
             return true;
         }
 
         // Instructors of the course can access it
-        if ($user->role_id == 2 && $course->created_by == $user->id) {
+        if ($user->role_id == RoleConstant::INSTRUCTOR && $course->created_by == $user->id) {
             return true;
         }
 
