@@ -1434,6 +1434,22 @@ php artisan migrate:fresh --force --seed
   - Validation: JWT signature, expiry check, user enrollment verification
   - URL never exposed in JSON response (secure against network inspection)
 
+
+### Phase 2: Web-to-App Deep Linking & Auto-Login (2025-11-06+)
+- `GET /api/deep-link/watch?course_id={id}&module_id={id}` - Generate deep link token for mobile app (enrolled students only)
+  - Query Parameters: `course_id` (required), `module_id` (required)
+  - Response: `{ deep_link: "app://watch?token=...", fallback_url: "...", token_expires_in: 300, module_title: "..." }`
+  - Token TTL: 5 minutes (300 seconds)
+  - Validation: User enrollment status, module exists in course, module has video
+  - Security: Token includes user_id, course_id, module_id, type='deep_link', jti (replay prevention)
+- `POST /api/auth/deep-link-login` - Exchange deep link token for regular JWT (unauthenticated users)
+  - Request: `{ deep_link_token: "eyJ0eXAi..." }`
+  - Response: `{ accessToken: "...", userData: {...}, userAbilityRules: {...} }`
+  - Validation: JWT signature, expiry, token type, replay prevention (jti blacklist), enrollment re-validation
+  - Security: Replayed tokens rejected (jti tracked in Cache for 5 min), unenrolled users denied (403)
+  - Logging: Deep link logins logged for audit trail with user_id, course_id, IP address
+  - Returns 401 for invalid/expired tokens, 403 if user no longer enrolled, 500 for JWT generation failures
+
 ### Assignments
 - `GET /api/instructor/assignments` - List instructor assignments
 - `POST /api/courses/{course}/assignments` - Create assignment
@@ -1896,6 +1912,237 @@ Modify in `config/videos.php`:
 - Model accessor automatically decrypts
 
 See `sessions/tasks/h-implement-video-course-management/1-backend-video-upload.md` for complete implementation details and discovery notes.
+
+## Phase 2: Web-to-App Deep Linking & Auto-Login (Implementation Guide)
+
+Phase 2 enables seamless web-to-app transitions. Students click a "Watch on App" button in the Vueend web dashboard and are automatically logged into Hekmat Sara mobile app with context-aware navigation to specific course/module.
+
+### Architecture Overview
+
+**Deep Link Flow**:
+1. Frontend requests deep link token: `GET /deep-link/watch?course_id=X&module_id=Y`
+2. Backend generates 5-minute JWT with claims: `user_id`, `course_id`, `module_id`, `type='deep_link'`, `jti` (unique ID)
+3. Frontend constructs deep link: `app://watch?token={jwt}&course_id=X&module_id=Y`
+4. OS opens mobile app via deep link URI
+5. Mobile app extracts token and validates via `DeepLinkAuthService`
+6. If not logged in: Mobile exchanges token for regular JWT via `POST /auth/deep-link-login`
+7. Backend validates token and re-checks enrollment before issuing JWT
+8. Mobile stores credentials and navigates to video player
+
+**Security Features**:
+- **Token Expiry**: 5-minute TTL (configurable via `config('videos.token_ttl_minutes')`)
+- **Replay Prevention**: `jti` claim stored in Cache for token TTL, prevents reuse
+- **Type Validation**: Token must have `type='deep_link'` and `purpose='video_playback'`
+- **Enrollment Re-validation**: Backend re-checks user still enrolled before issuing JWT
+- **Audit Trail**: All deep link logins logged with user_id, course_id, IP address, timestamp
+
+### Implementation Files
+
+#### 1. DeepLinkController (File: `app/Http/Controllers/DeepLinkController.php`)
+
+**Endpoint**: `GET /api/deep-link/watch?course_id={id}&module_id={id}`
+
+**Validations**:
+- Course and module exist in database
+- Module belongs to requested course
+- User is enrolled in course (enrollment.status='enrolled')
+- Module has encrypted video URL
+
+**Token Generation**:
+- Creates JWT with custom claims: `jti` (UUID), `user_id`, `course_id`, `module_id`, `type`, `purpose`
+- Uses `JWTAuth::claims($payload)->setTTL($ttl)->fromUser($user)`
+- **Important**: TTL is in MINUTES, not seconds. Config value already in minutes
+- Constructs deep link URL: `app://watch?token={jwt}&course_id={id}&module_id={id}`
+- Returns fallback URL for app not installed (Play Store link from config)
+
+**Response**:
+```json
+{
+  "deep_link": "app://watch?token=eyJ0eXAi...&course_id=1&module_id=2",
+  "fallback_url": "https://play.google.com/store/apps/details?id=com.hakimyar.hekmat_sara",
+  "token_expires_in": 300,
+  "module_title": "Video Title"
+}
+```
+
+#### 2. AuthController::deepLinkLogin() (File: `app/Http/Controllers/AuthController.php` lines 124-219)
+
+**Endpoint**: `POST /api/auth/deep-link-login`
+
+**Request**:
+```json
+{
+  "deep_link_token": "eyJ0eXAi..."
+}
+```
+
+**Validation Sequence**:
+1. **JWT Signature & Expiry**: Uses `JWTAuth::setToken()->getPayload()` to validate
+2. **Token Type**: Checks `type` claim equals `'deep_link'`
+3. **Purpose**: Checks `purpose` claim equals `'video_playback'`
+4. **Replay Prevention**: 
+   - Extracts `jti` claim (unique token ID)
+   - Checks if `Cache::has("deep_link_used:{$jti}")` (already used)
+   - If exists: Returns 401 "Invalid or expired token"
+   - If not: Stores in Cache for 5 minutes to prevent replay
+5. **User Existence**: Fetches user by `user_id` claim
+6. **Enrollment Re-validation**: Uses `isEnrolledInCourse()` to verify still enrolled
+   - If not enrolled: Returns 403 "You are no longer enrolled"
+7. **JWT Issuance**: Generates fresh JWT for regular auth via `JWTAuth::fromUser($user)`
+
+**Response** (same as regular login):
+```json
+{
+  "accessToken": "eyJ0eXAi...",
+  "userData": {
+    "id": 123,
+    "first_name": "John",
+    "last_name": "Doe",
+    "full_name": "John Doe",
+    "username": "johndoe",
+    "phone_number": "09121234567",
+    "email": "john@example.com",
+    "role_id": 1,
+    "role": "admin"
+  },
+  "userAbilityRules": {...}
+}
+```
+
+**Error Responses**:
+- 400: Invalid request (missing deep_link_token)
+- 401: Invalid/expired/replayed token
+- 403: User no longer enrolled in course
+- 500: JWT generation failed
+
+**Logging**:
+- Success: Logs `Deep link login successful` with user_id, course_id, method='deep_link'
+- Failure: Logs reason (invalid token, not enrolled, JWT error) with attempt details
+- Replay attempts: Logs warning with jti and IP address
+
+#### 3. Configuration (File: `config/videos.php`)
+
+```php
+'token_ttl_minutes' => env('DEEP_LINK_TOKEN_TTL', 5),  // 5 minutes
+'deep_links' => [
+    'fallback_url' => env(
+        'DEEP_LINK_FALLBACK_URL',
+        'https://play.google.com/store/apps/details?id=com.hakimyar.hekmat_sara'
+    ),
+]
+```
+
+### Routes (File: `routes/api.php`)
+
+```php
+Route::middleware('auth:api')->group(function () {
+    // Generate deep link token (authenticated users only)
+    Route::get('/deep-link/watch', [DeepLinkController::class, 'getWatchLink']);
+});
+
+// Exchange deep link token for JWT (unauthenticated users)
+Route::post('/auth/deep-link-login', [AuthController::class, 'deepLinkLogin']);
+```
+
+### Testing Phase 2
+
+**1. Generate Deep Link**:
+```bash
+# Get deep link token
+curl -H "Authorization: Bearer {jwt_token}" \
+  "https://api.ithdp.ir/api/deep-link/watch?course_id=1&module_id=2"
+
+# Response:
+{
+  "deep_link": "app://watch?token=eyJ0eXAi...",
+  "token_expires_in": 300,
+  ...
+}
+```
+
+**2. Inspect Token**:
+- Copy token from response
+- Paste at https://jwt.io to decode
+- Verify claims: `user_id`, `course_id`, `module_id`, `type='deep_link'`, `jti`
+
+**3. Test Deep Link Login**:
+```bash
+# Exchange token for JWT
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Success response:
+{
+  "accessToken": "eyJ0eXAi...",
+  "userData": {...}
+}
+```
+
+**4. Test Replay Prevention**:
+```bash
+# First call: should succeed (200)
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Second call with same token: should fail (401)
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Error response:
+{
+  "errors": {
+    "token": "Invalid or expired token."
+  }
+}
+```
+
+**5. Test Enrollment Re-validation**:
+```bash
+# Generate deep link while enrolled
+curl -H "Authorization: Bearer {jwt}" \
+  "https://api.ithdp.ir/api/deep-link/watch?course_id=1&module_id=2"
+
+# Unenroll user from course
+UPDATE enrollments SET status='unenrolled' WHERE user_id=X AND course_id=1;
+
+# Try to use token: should fail (403)
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Error response:
+{
+  "errors": {
+    "token": "You are no longer enrolled in this course."
+  }
+}
+```
+
+### Common Issues & Solutions
+
+**Token generation works but login fails**:
+- Check JWT_SECRET is same on all token generation/validation points
+- Verify user still enrolled: `SELECT * FROM enrollments WHERE user_id=X AND course_id=Y AND status='enrolled';`
+- Token may be expired (5-min TTL)
+
+**Deep link login returns 401 instead of 403 for unenrolled user**:
+- Check `isEnrolledInCourse()` logic in AuthController
+- Verify enrollment.status is 'enrolled' not 'unenrolled'
+
+**Replay prevention not working**:
+- Check Redis/Cache is configured and running
+- Verify `Cache::put()` and `Cache::has()` working correctly
+- Ensure TTL matches token TTL in config
+
+**Tokens valid but replay check always fails**:
+- May be timezone issue: verify server timezone matches deployment
+- Check Cache expiry is set to same TTL as token
+
+See `sessions/tasks/h-implement-video-course-management/2-web-to-app-deeplink.md` for complete implementation details and design notes.
+
 
 ---
 

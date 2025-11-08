@@ -20,6 +20,7 @@ use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\CourseVideoLinkController;
 use App\Http\Controllers\VideoProxyController;
+use App\Http\Controllers\DeepLinkController;
 
 
 Route::middleware(['auth:api'])->get('/user', function (Request $request) {
@@ -72,8 +73,9 @@ Route::middleware('auth:api')->group(function () {
         ->where('course', '[0-9]+')
         ->where('module', '[0-9]+');
 
-    // Student endpoint - get stream token
+    // Student endpoint - get stream token (with rate limiting to prevent abuse)
     Route::get('/courses/{course}/modules/{module}/video-stream-token', [CourseVideoLinkController::class, 'getStreamToken'])
+        ->middleware('throttle:60,1') // 60 requests per minute
         ->where('course', '[0-9]+')
         ->where('module', '[0-9]+');
 
@@ -159,3 +161,14 @@ Route::middleware('auth:api')->group(function () {
 // Route::fallback(function () {
 //     return response()->json(['message' => 'Route not found.'], 404);
 // });
+
+// Deep Link Routes (Phase 2) - for web-to-app transitions
+Route::middleware('auth:api')->group(function () {
+    // Generate deep link for mobile app video playback
+    Route::get('/deep-link/watch', [DeepLinkController::class, 'getWatchLink'])
+        ->middleware('throttle:10,1'); // 60 requests per minute
+});
+
+// Deep link login - allows mobile app to authenticate using deep link token
+Route::post('/auth/deep-link-login', [AuthController::class, 'deepLinkLogin'])
+    ->middleware('throttle:5,1'); // Rate limit to prevent brute force

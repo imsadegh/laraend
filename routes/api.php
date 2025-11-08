@@ -20,6 +20,7 @@ use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\CourseVideoLinkController;
 use App\Http\Controllers\VideoProxyController;
+use App\Http\Controllers\DeepLinkController;
 
 
 Route::middleware(['auth:api'])->get('/user', function (Request $request) {
@@ -160,3 +161,14 @@ Route::middleware('auth:api')->group(function () {
 // Route::fallback(function () {
 //     return response()->json(['message' => 'Route not found.'], 404);
 // });
+
+// Deep Link Routes (Phase 2) - for web-to-app transitions
+Route::middleware('auth:api')->group(function () {
+    // Generate deep link for mobile app video playback
+    Route::get('/deep-link/watch', [DeepLinkController::class, 'getWatchLink'])
+        ->middleware('throttle:10,1'); // 10 requests per minute - students rarely need multiple deep links
+});
+
+// Deep link login - allows mobile app to authenticate using deep link token
+Route::post('/auth/deep-link-login', [AuthController::class, 'deepLinkLogin'])
+    ->middleware('throttle:5,1'); // Rate limit to prevent brute force
