@@ -41,7 +41,7 @@ class CourseModuleSeeder extends Seeder
                 'created_by'                 => 1,
                 'title'                      => 'ویدیو اول',
                 'type'                       => 'video',
-                'content_url'                => null,
+                'content_url'                => 'video link',
                 'description'                => 'توضیحات فیلم',
                 'article_content'            => null,
                 'module_data'                => null,

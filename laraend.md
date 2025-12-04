@@ -1415,6 +1415,41 @@ php artisan migrate:fresh --force --seed
 - `PUT /api/modules/{id}` - Update module
 - `DELETE /api/modules/{id}` - Delete module
 
+### Phase 1: Secure Video Link Management (2025-11-05+)
+- `POST /api/courses/{course}/modules/{module}/add-video` - Add encrypted video URL (instructor/admin only)
+  - Request: `{ video_url, video_title, estimated_duration_seconds, video_source }`
+  - Response: `{ video_id, module_id, title, estimated_duration_seconds, video_source, added_at }`
+  - Validation: HTTPS URL, domain whitelist, URL accessibility check
+  - Encryption: AES-256-CBC stored in database
+- `PUT /api/courses/{course}/modules/{module}/video` - Update existing video link (instructor/admin only)
+  - Same request/response as add-video, updates existing encrypted_video_url
+- `DELETE /api/courses/{course}/modules/{module}/video` - Delete video link (instructor/admin only)
+  - No request body, returns 204 No Content on success
+- `GET /api/courses/{course}/modules/{module}/video-stream-token` - Get temporary stream token (enrolled students only)
+  - Response: `{ stream_token: "eyJ0eXAi...", expires_in: 300, video_title: "..." }`
+  - Token TTL: 5 minutes (300 seconds)
+  - Token contains encrypted URL payload, not plain text
+- `GET /api/videos/stream?token={jwt}` - Video proxy with 302 redirect (all authenticated users with valid token)
+  - Returns: HTTP 302 redirect to actual video URL
+  - Validation: JWT signature, expiry check, user enrollment verification
+  - URL never exposed in JSON response (secure against network inspection)
+
+
+### Phase 2: Web-to-App Deep Linking & Auto-Login (2025-11-06+)
+- `GET /api/deep-link/watch?course_id={id}&module_id={id}` - Generate deep link token for mobile app (enrolled students only)
+  - Query Parameters: `course_id` (required), `module_id` (required)
+  - Response: `{ deep_link: "app://watch?token=...", fallback_url: "...", token_expires_in: 300, module_title: "..." }`
+  - Token TTL: 5 minutes (300 seconds)
+  - Validation: User enrollment status, module exists in course, module has video
+  - Security: Token includes user_id, course_id, module_id, type='deep_link', jti (replay prevention)
+- `POST /api/auth/deep-link-login` - Exchange deep link token for regular JWT (unauthenticated users)
+  - Request: `{ deep_link_token: "eyJ0eXAi..." }`
+  - Response: `{ accessToken: "...", userData: {...}, userAbilityRules: {...} }`
+  - Validation: JWT signature, expiry, token type, replay prevention (jti blacklist), enrollment re-validation
+  - Security: Replayed tokens rejected (jti tracked in Cache for 5 min), unenrolled users denied (403)
+  - Logging: Deep link logins logged for audit trail with user_id, course_id, IP address
+  - Returns 401 for invalid/expired tokens, 403 if user no longer enrolled, 500 for JWT generation failures
+
 ### Assignments
 - `GET /api/instructor/assignments` - List instructor assignments
 - `POST /api/courses/{course}/assignments` - Create assignment
@@ -1591,8 +1626,529 @@ composer update --no-dev
 
 ---
 
-**Last Updated**: October 10, 2025
+## Phase 1: Secure Video Link Management (Implementation Guide)
+
+### Overview
+
+Phase 1 implements secure video link management for external video sources (YouTube, Vimeo, CDN, etc.) without storing video files on the VPS. Video URLs are encrypted in the database and never exposed via JSON responses to prevent URL copying or unauthorized streaming.
+
+### Architecture
+
+#### 1. Encryption Service
+**File**: `app/Services/EncryptionService.php`
+
+Provides AES-256-CBC encryption/decryption using Laravel's built-in Crypt facade:
+```php
+// Encrypt URL when saving
+$encrypted = $encryptionService->encryptUrl($videoUrl);
+
+// Decrypt URL when needed
+$url = $encryptionService->decryptUrl($encrypted);
+```
+
+**Why Laravel Crypt?**
+- Uses APP_KEY from `.env` (already generated)
+- AES-256-CBC encryption with authentication
+- Secure serialization built-in
+- Decryption fails gracefully if key changes
+
+#### 2. Domain Whitelist Configuration
+**File**: `config/videos.php`
+
+Restrict video URLs to trusted domains:
+```php
+'allowed_domains' => [
+    'youtube.com',
+    'youtu.be',
+    'vimeo.com',
+    'cdn.example.com',
+    'file-examples.com',
+],
+'token_ttl_minutes' => 5,
+```
+
+Add new domains and run `php artisan config:clear` to apply changes.
+
+#### 3. Video Link Management Controller
+**File**: `app/Http/Controllers/CourseVideoLinkController.php`
+
+Four endpoints for managing video links:
+
+**3.1 Add Video** - `POST /api/courses/{course}/modules/{module}/add-video`
+- Validates: HTTPS URL, domain whitelist, URL accessibility (HEAD request)
+- Encrypts URL and stores in database
+- Returns: video_id, title, duration (NOT the actual URL)
+- Authorization: Instructor/Admin of course only
+
+**3.2 Update Video** - `PUT /api/courses/{course}/modules/{module}/video`
+- Same validation as add, updates existing encrypted URL
+- Authorization: Instructor/Admin of course only
+
+**3.3 Delete Video** - `DELETE /api/courses/{course}/modules/{module}/video`
+- Removes encrypted_video_url from module
+- Authorization: Instructor/Admin of course only
+
+**3.4 Get Stream Token** - `GET /api/courses/{course}/modules/{module}/video-stream-token`
+- Validates: User is enrolled in course (status='enrolled')
+- Generates temporary JWT token with 5-minute TTL
+- Token payload contains encrypted URL (NOT plain text)
+- Returns: stream_token, expires_in, video_title
+- Authorization: Enrolled students only
+
+#### 4. Video Proxy Controller
+**File**: `app/Http/Controllers/VideoProxyController.php`
+
+Endpoint: `GET /api/videos/stream?token={jwt}`
+
+Process:
+1. Validate JWT token (signature, expiry, purpose='video_stream')
+2. Extract encrypted URL from token payload
+3. Decrypt URL using EncryptionService
+4. Verify user is still enrolled in course
+5. Return HTTP 302 redirect to actual video URL
+
+**Why 302 redirect?**
+- Original video URL never exposed in JSON response
+- Browser follows redirect transparently
+- Network inspection shows redirect, not final URL
+- Mobile apps handle redirects seamlessly
+- Prevents URL copying from API responses
+
+#### 5. CourseModule Model
+**File**: `app/Models/CourseModule.php`
+
+Eloquent accessors/mutators for transparent encryption:
+```php
+protected function encryptedVideoUrl(): Attribute {
+    return Attribute::make(
+        get: fn ($value) => $value ? Crypt::decrypt($value) : null,
+        set: fn ($value) => $value ? Crypt::encrypt($value) : null,
+    );
+}
+```
+
+**Effect**: Controllers access `$module->encrypted_video_url` and encryption/decryption happens automatically.
+
+#### 6. Database Schema
+**Migration**: `database/migrations/2025_11_05_add_video_fields_to_course_modules_table.php`
+
+New columns added to `course_modules` table:
+- `encrypted_video_url` (text, nullable) - AES-256 encrypted URL
+- `video_title` (string, nullable) - Display title
+- `estimated_duration_seconds` (integer, nullable) - Duration estimate
+- `video_source` (string, nullable) - Source type ('youtube', 'vimeo', 'external', etc.)
+- `video_added_at` (timestamp, nullable) - When video was added
+- `video_added_by` (foreign key, nullable) - User who added video
+- `video_metadata` (json, nullable) - Thumbnail URL, transcripts, etc.
+
+Index on `video_source` for filtering by source type.
+
+#### 7. Test Data & Seeders
+**File**: `database/seeders/CourseModuleVideoSeeder.php`
+
+Creates realistic test data:
+- YouTube video: `https://www.youtube.com/watch?v=...`
+- Vimeo video: `https://vimeo.com/...`
+- External CDN: `https://cdn.example.com/videos/...`
+- Multiple videos per module across different sources
+- Includes PostgreSQL sequence reset for ID consistency
+
+**Run seeders**:
+```bash
+php artisan db:seed --class=CourseModuleVideoSeeder
+```
+
+### Security Implementation Details
+
+#### URL Encryption at Rest
+- All video URLs stored encrypted in database
+- Direct SQL queries return encrypted data (unreadable)
+- Only CourseModule model accessor decrypts for application use
+
+#### Token-Based Access
+- Stream tokens contain encrypted URL, not plain text
+- Token validates user enrollment at generation time
+- Tokens expire after 5 minutes (configurable in config/videos.php)
+- Each token is single-use (server validates timing on proxy endpoint)
+
+#### Server-Side Validation
+- Every video request validates:
+  - JWT signature and expiry
+  - User enrollment status (checked at stream token generation AND proxy endpoint)
+  - Domain whitelist at URL add/update time
+- Re-checking enrollment on proxy ensures access is revoked if student unenrolls
+
+#### URL Validation
+- Only HTTPS URLs accepted (HTTP rejected for security)
+- HEAD request verifies URL is accessible and returns video MIME type
+- Domain must be in whitelist
+- Applied at add/update time, not every request (performance optimization)
+
+#### Secure Redirect Pattern
+- Proxy endpoint returns HTTP 302 redirect
+- Original video URL never included in JSON response body
+- Network inspection shows redirect chain, not final URL in response
+- Browser/mobile app follows redirect transparently
+
+### Testing
+
+**Test File**: `tests/Feature/VideoLinkManagementTest.php`
+
+Covers 20+ scenarios:
+- URL validation (HTTPS only, domain whitelist, accessibility)
+- Encryption/decryption correctness
+- Authorization (instructor only for add/update/delete, enrolled only for stream token)
+- Token generation and validation
+- Token expiry (5-minute TTL)
+- Proxy endpoint redirect behavior
+- Error handling (404, 403, 422, 401 status codes)
+
+**Run tests**:
+```bash
+php artisan test tests/Feature/VideoLinkManagementTest.php
+```
+
+### Integration with Frontend & Mobile
+
+#### Vueend (Vue 3 Frontend)
+**File**: `src/services/VideoService.js`
+- API client for video endpoints
+- Handles token caching during 5-minute TTL window
+
+**File**: `src/components/VideoManagement.vue`
+- Instructor form for adding/editing video URLs
+- Real-time validation feedback
+
+#### Hekmat Sara (Flutter Mobile)
+**File**: `lib/services/video_service.dart`
+- Generates stream tokens from modules
+- Constructs proxy URLs with token parameter
+
+**File**: `lib/screens/video_player_screen.dart`
+- Requests stream token before video playback
+- Plays video via proxy endpoint URL
+- Handles token expiry with automatic refresh
+
+### Configuration
+
+#### Environment Variables
+
+No new env variables required. Existing configuration used:
+- `APP_KEY` - Used for encryption (generated by php artisan key:generate)
+- `JWT_SECRET` - Used for stream token generation
+
+#### Whitelist Management
+
+Edit `config/videos.php` to modify allowed domains:
+```php
+'allowed_domains' => [
+    'youtube.com',
+    'youtu.be',
+    'vimeo.com',
+    'example.cdn.com',  // Add new domain here
+],
+```
+
+Clear config cache after changes:
+```bash
+php artisan config:clear
+```
+
+#### Token TTL
+
+Modify in `config/videos.php`:
+```php
+'token_ttl_minutes' => 5,  // Change to 10 for 10-minute tokens
+```
+
+### Deployment Checklist
+
+- [ ] Run migration: `php artisan migrate`
+- [ ] Clear config cache: `php artisan config:clear`
+- [ ] Run seeders (optional): `php artisan db:seed --class=CourseModuleVideoSeeder`
+- [ ] Run tests: `php artisan test tests/Feature/VideoLinkManagementTest.php`
+- [ ] Configure whitelist domains in `config/videos.php`
+- [ ] Frontend: Update VideoService with production API URL
+- [ ] Mobile: Update video_service.dart with production API URL
+- [ ] Test video flow end-to-end:
+  1. Instructor adds video
+  2. Student enrolls in course
+  3. Student requests stream token
+  4. Mobile/frontend plays video via proxy endpoint
+
+### Known Limitations & Future Enhancements
+
+**Phase 1 Scope**:
+- Supports external video URLs only (YouTube, Vimeo, CDN)
+- No video upload/hosting on VPS
+- No deep linking (Phase 2 feature)
+- No watch time tracking (Phase 3 feature)
+
+**Future Phases**:
+- Phase 2: Deep linking with timestamp support
+- Phase 3: Watch time tracking and progress resumption
+- Phase 4: Adaptive bitrate streaming and CDN integration
+- Phase 5: Video analytics and engagement metrics
+
+### Troubleshooting
+
+**"Domain not whitelisted" error**:
+- Add domain to `config/videos.php`
+- Run `php artisan config:clear`
+- Verify domain is HTTPS
+
+**Stream token returns null**:
+- Check user enrollment: `SELECT * FROM enrollments WHERE user_id=X AND course_id=Y AND status='enrolled';`
+- Verify JWT_SECRET is set correctly
+
+**Video URL visible in Network tab**:
+- This is expected (browser follows 302 redirect)
+- Ensure URL is NOT returned in JSON response body
+- Verify VideoProxyController returns `redirect()` not JSON
+
+**Encrypted URLs appear corrupted**:
+- Never read encrypted_video_url directly from database
+- Always access through CourseModule model: `$module->encrypted_video_url`
+- Model accessor automatically decrypts
+
+See `sessions/tasks/h-implement-video-course-management/1-backend-video-upload.md` for complete implementation details and discovery notes.
+
+## Phase 2: Web-to-App Deep Linking & Auto-Login (Implementation Guide)
+
+Phase 2 enables seamless web-to-app transitions. Students click a "Watch on App" button in the Vueend web dashboard and are automatically logged into Hekmat Sara mobile app with context-aware navigation to specific course/module.
+
+### Architecture Overview
+
+**Deep Link Flow**:
+1. Frontend requests deep link token: `GET /deep-link/watch?course_id=X&module_id=Y`
+2. Backend generates 5-minute JWT with claims: `user_id`, `course_id`, `module_id`, `type='deep_link'`, `jti` (unique ID)
+3. Frontend constructs deep link: `app://watch?token={jwt}&course_id=X&module_id=Y`
+4. OS opens mobile app via deep link URI
+5. Mobile app extracts token and validates via `DeepLinkAuthService`
+6. If not logged in: Mobile exchanges token for regular JWT via `POST /auth/deep-link-login`
+7. Backend validates token and re-checks enrollment before issuing JWT
+8. Mobile stores credentials and navigates to video player
+
+**Security Features**:
+- **Token Expiry**: 5-minute TTL (configurable via `config('videos.token_ttl_minutes')`)
+- **Replay Prevention**: `jti` claim stored in Cache for token TTL, prevents reuse
+- **Type Validation**: Token must have `type='deep_link'` and `purpose='video_playback'`
+- **Enrollment Re-validation**: Backend re-checks user still enrolled before issuing JWT
+- **Audit Trail**: All deep link logins logged with user_id, course_id, IP address, timestamp
+
+### Implementation Files
+
+#### 1. DeepLinkController (File: `app/Http/Controllers/DeepLinkController.php`)
+
+**Endpoint**: `GET /api/deep-link/watch?course_id={id}&module_id={id}`
+
+**Validations**:
+- Course and module exist in database
+- Module belongs to requested course
+- User is enrolled in course (enrollment.status='enrolled')
+- Module has encrypted video URL
+
+**Token Generation**:
+- Creates JWT with custom claims: `jti` (UUID), `user_id`, `course_id`, `module_id`, `type`, `purpose`
+- Uses `JWTAuth::claims($payload)->setTTL($ttl)->fromUser($user)`
+- **Important**: TTL is in MINUTES, not seconds. Config value already in minutes
+- Constructs deep link URL: `app://watch?token={jwt}&course_id={id}&module_id={id}`
+- Returns fallback URL for app not installed (Play Store link from config)
+
+**Response**:
+```json
+{
+  "deep_link": "app://watch?token=eyJ0eXAi...&course_id=1&module_id=2",
+  "fallback_url": "https://play.google.com/store/apps/details?id=com.hakimyar.hekmat_sara",
+  "token_expires_in": 300,
+  "module_title": "Video Title"
+}
+```
+
+#### 2. AuthController::deepLinkLogin() (File: `app/Http/Controllers/AuthController.php` lines 124-219)
+
+**Endpoint**: `POST /api/auth/deep-link-login`
+
+**Request**:
+```json
+{
+  "deep_link_token": "eyJ0eXAi..."
+}
+```
+
+**Validation Sequence**:
+1. **JWT Signature & Expiry**: Uses `JWTAuth::setToken()->getPayload()` to validate
+2. **Token Type**: Checks `type` claim equals `'deep_link'`
+3. **Purpose**: Checks `purpose` claim equals `'video_playback'`
+4. **Replay Prevention**: 
+   - Extracts `jti` claim (unique token ID)
+   - Checks if `Cache::has("deep_link_used:{$jti}")` (already used)
+   - If exists: Returns 401 "Invalid or expired token"
+   - If not: Stores in Cache for 5 minutes to prevent replay
+5. **User Existence**: Fetches user by `user_id` claim
+6. **Enrollment Re-validation**: Uses `isEnrolledInCourse()` to verify still enrolled
+   - If not enrolled: Returns 403 "You are no longer enrolled"
+7. **JWT Issuance**: Generates fresh JWT for regular auth via `JWTAuth::fromUser($user)`
+
+**Response** (same as regular login):
+```json
+{
+  "accessToken": "eyJ0eXAi...",
+  "userData": {
+    "id": 123,
+    "first_name": "John",
+    "last_name": "Doe",
+    "full_name": "John Doe",
+    "username": "johndoe",
+    "phone_number": "09121234567",
+    "email": "john@example.com",
+    "role_id": 1,
+    "role": "admin"
+  },
+  "userAbilityRules": {...}
+}
+```
+
+**Error Responses**:
+- 400: Invalid request (missing deep_link_token)
+- 401: Invalid/expired/replayed token
+- 403: User no longer enrolled in course
+- 500: JWT generation failed
+
+**Logging**:
+- Success: Logs `Deep link login successful` with user_id, course_id, method='deep_link'
+- Failure: Logs reason (invalid token, not enrolled, JWT error) with attempt details
+- Replay attempts: Logs warning with jti and IP address
+
+#### 3. Configuration (File: `config/videos.php`)
+
+```php
+'token_ttl_minutes' => env('DEEP_LINK_TOKEN_TTL', 5),  // 5 minutes
+'deep_links' => [
+    'fallback_url' => env(
+        'DEEP_LINK_FALLBACK_URL',
+        'https://play.google.com/store/apps/details?id=com.hakimyar.hekmat_sara'
+    ),
+]
+```
+
+### Routes (File: `routes/api.php`)
+
+```php
+Route::middleware('auth:api')->group(function () {
+    // Generate deep link token (authenticated users only)
+    Route::get('/deep-link/watch', [DeepLinkController::class, 'getWatchLink']);
+});
+
+// Exchange deep link token for JWT (unauthenticated users)
+Route::post('/auth/deep-link-login', [AuthController::class, 'deepLinkLogin']);
+```
+
+### Testing Phase 2
+
+**1. Generate Deep Link**:
+```bash
+# Get deep link token
+curl -H "Authorization: Bearer {jwt_token}" \
+  "https://api.ithdp.ir/api/deep-link/watch?course_id=1&module_id=2"
+
+# Response:
+{
+  "deep_link": "app://watch?token=eyJ0eXAi...",
+  "token_expires_in": 300,
+  ...
+}
+```
+
+**2. Inspect Token**:
+- Copy token from response
+- Paste at https://jwt.io to decode
+- Verify claims: `user_id`, `course_id`, `module_id`, `type='deep_link'`, `jti`
+
+**3. Test Deep Link Login**:
+```bash
+# Exchange token for JWT
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Success response:
+{
+  "accessToken": "eyJ0eXAi...",
+  "userData": {...}
+}
+```
+
+**4. Test Replay Prevention**:
+```bash
+# First call: should succeed (200)
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Second call with same token: should fail (401)
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Error response:
+{
+  "errors": {
+    "token": "Invalid or expired token."
+  }
+}
+```
+
+**5. Test Enrollment Re-validation**:
+```bash
+# Generate deep link while enrolled
+curl -H "Authorization: Bearer {jwt}" \
+  "https://api.ithdp.ir/api/deep-link/watch?course_id=1&module_id=2"
+
+# Unenroll user from course
+UPDATE enrollments SET status='unenrolled' WHERE user_id=X AND course_id=1;
+
+# Try to use token: should fail (403)
+curl -X POST "https://api.ithdp.ir/api/auth/deep-link-login" \
+  -H "Content-Type: application/json" \
+  -d '{"deep_link_token": "eyJ0eXAi..."}'
+
+# Error response:
+{
+  "errors": {
+    "token": "You are no longer enrolled in this course."
+  }
+}
+```
+
+### Common Issues & Solutions
+
+**Token generation works but login fails**:
+- Check JWT_SECRET is same on all token generation/validation points
+- Verify user still enrolled: `SELECT * FROM enrollments WHERE user_id=X AND course_id=Y AND status='enrolled';`
+- Token may be expired (5-min TTL)
+
+**Deep link login returns 401 instead of 403 for unenrolled user**:
+- Check `isEnrolledInCourse()` logic in AuthController
+- Verify enrollment.status is 'enrolled' not 'unenrolled'
+
+**Replay prevention not working**:
+- Check Redis/Cache is configured and running
+- Verify `Cache::put()` and `Cache::has()` working correctly
+- Ensure TTL matches token TTL in config
+
+**Tokens valid but replay check always fails**:
+- May be timezone issue: verify server timezone matches deployment
+- Check Cache expiry is set to same TTL as token
+
+See `sessions/tasks/h-implement-video-course-management/2-web-to-app-deeplink.md` for complete implementation details and design notes.
+
+
+---
+
+**Last Updated**: November 6, 2025
 **Laravel Version**: 12.x
 **PHP Version**: 8.4+
 **PostgreSQL Version**: 16
+**Phase 1 Status**: Complete (2025-11-05 to 2025-11-06)
 

@@ -166,7 +166,7 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware('auth:api')->group(function () {
     // Generate deep link for mobile app video playback
     Route::get('/deep-link/watch', [DeepLinkController::class, 'getWatchLink'])
-        ->middleware('throttle:10,1'); // 10 requests per minute - students rarely need multiple deep links
+        ->middleware('throttle:10,1'); // 60 requests per minute
 });
 
 // Deep link login - allows mobile app to authenticate using deep link token
