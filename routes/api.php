@@ -34,6 +34,14 @@ Route::post('/auth/login', [AuthController::class, 'login'])->middleware('thrott
 Route::post('/otp/send', [OTPVerificationController::class, 'sendOTP']);
 Route::post('/otp/verify', [OTPVerificationController::class, 'verifyOTP']);
 
+// Profile Management Routes
+Route::middleware('auth:api')->group(function () {
+    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/profile/avatar', [AuthController::class, 'updateAvatar']);
+    Route::put('/profile/password', [AuthController::class, 'changePassword']);
+});
+
 // Course Management
 // todo: only admin and instructor can create, update, and delete courses
 Route::middleware('auth:api')->group(function () {

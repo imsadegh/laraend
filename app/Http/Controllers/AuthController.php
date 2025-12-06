@@ -240,4 +240,149 @@ class AuthController extends Controller
             ->where('status', 'enrolled')
             ->exists();
     }
+
+    /**
+     * Get the authenticated user's profile
+     */
+    public function profile(Request $request)
+    {
+        $user = auth()->user();
+
+        return response()->json([
+            'id' => $user->id,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'full_name' => $user->full_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'phone_number' => $user->phone_number,
+            'melli_code' => $user->melli_code,
+            'birth_date' => $user->birth_date,
+            'sex' => $user->sex,
+            'address' => $user->address,
+            'city' => $user->city,
+            'zip_code' => $user->zip_code,
+            'avatar' => $user->avatar,
+            'role_id' => $user->role_id,
+            'role' => $user->role->name ?? null,
+        ]);
+    }
+
+    /**
+     * Update the authenticated user's profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'sometimes|string|max:50',
+            'last_name' => 'sometimes|string|max:50',
+            'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
+            'phone_number' => 'sometimes|regex:/^09\d{9}$/|unique:users,phone_number,' . $user->id,
+            'melli_code' => 'sometimes|nullable|string|max:10',
+            'birth_date' => 'sometimes|nullable|date',
+            'sex' => 'sometimes|nullable|in:male,female',
+            'address' => 'sometimes|nullable|string|max:500',
+            'city' => 'sometimes|nullable|string|max:100',
+            'zip_code' => 'sometimes|nullable|string|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $data = $validator->validated();
+
+        // Update full_name if first or last name changed
+        if (isset($data['first_name']) || isset($data['last_name'])) {
+            $firstName = $data['first_name'] ?? $user->first_name;
+            $lastName = $data['last_name'] ?? $user->last_name;
+            $data['full_name'] = $firstName . ' ' . $lastName;
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'full_name' => $user->full_name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'melli_code' => $user->melli_code,
+                'birth_date' => $user->birth_date,
+                'sex' => $user->sex,
+                'address' => $user->address,
+                'city' => $user->city,
+                'zip_code' => $user->zip_code,
+                'avatar' => $user->avatar,
+                'role_id' => $user->role_id,
+                'role' => $user->role->name ?? null,
+            ],
+        ]);
+    }
+
+    /**
+     * Update the authenticated user's avatar
+     */
+    public function updateAvatar(Request $request)
+    {
+        $user = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar && file_exists(storage_path('app/public/' . $user->avatar))) {
+                unlink(storage_path('app/public/' . $user->avatar));
+            }
+
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $avatarPath;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Avatar updated successfully',
+                'avatar' => asset('storage/' . $avatarPath),
+            ]);
+        }
+
+        return response()->json(['message' => 'No avatar file provided'], 400);
+    }
+
+    /**
+     * Change the authenticated user's password
+     */
+    public function changePassword(Request $request)
+    {
+        $user = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['errors' => ['current_password' => ['Current password is incorrect']]], 422);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Password changed successfully']);
+    }
 }
