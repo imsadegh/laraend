@@ -39,9 +39,12 @@ return new class extends Migration {
 
             // Indexes for optimized querying
             $table->index('user_id');
+            $table->index('course_id');
             $table->index('payment_status');
             $table->index('payment_receipt');
             $table->index('refund_status');
+            $table->index('transaction_id');
+            $table->index(['user_id', 'course_id']); // Composite index for faster lookups
         });
     }
 

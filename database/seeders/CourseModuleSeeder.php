@@ -58,5 +58,8 @@ class CourseModuleSeeder extends Seeder
                 'deleted_at'                 => null,
             ],
         ]);
+
+        // Reset PostgreSQL sequence after inserting seed data with explicit IDs
+        DB::statement("SELECT setval('course_modules_id_seq', (SELECT COALESCE(MAX(id), 0) FROM course_modules) + 1)");
     }
 }

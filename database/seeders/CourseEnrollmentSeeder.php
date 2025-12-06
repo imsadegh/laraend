@@ -30,5 +30,8 @@ class CourseEnrollmentSeeder extends Seeder
                 'updated_at'             => '2025-04-17 12:52:31',
             ],
         ]);
+
+        // Reset PostgreSQL sequence after inserting seed data with explicit IDs
+        DB::statement("SELECT setval('course_enrollments_id_seq', (SELECT COALESCE(MAX(id), 0) FROM course_enrollments) + 1)");
     }
 }

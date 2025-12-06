@@ -17,20 +17,27 @@ class CourseController extends Controller
 {
     public function index(Request $request)
     {
-        // Fetch only courses that are visible (e.g., visibility = true)
-        // You may also want to filter by 'status' = 'active' if that makes sense for your LMS
+        // Fetch courses based on visibility and status
+        // Used for payment page - shows active and draft courses (excludes archived)
 
         $query = Course::query();
 
-        // For instance, only fetch visible if '?visible=1' is in the query
+        // Filter by visibility if '?visible=1' is in the query
         if ($request->boolean('visible', false)) {
             $query->where('visibility', true);
         }
 
-        // Additional filters like status, category, etc. can go here.
-        if ($request->boolean('active', false)) {
+        // Filter by status:
+        // ?active=1 -> show only 'active' courses (for public course listing)
+        // ?includeDraft=1 -> show 'active' and 'draft' courses (for payment page)
+        if ($request->boolean('includeDraft', false)) {
+            // For payment page: show active and draft (exclude archived)
+            $query->whereIn('status', ['active', 'draft']);
+        } elseif ($request->boolean('active', false)) {
+            // For other pages: show only active courses
             $query->where('status', 'active');
         }
+
         $courses = $query->get();
         return response()->json($courses);
     }
@@ -205,7 +212,7 @@ class CourseController extends Controller
                 return null;
             }
 
-            // Only include courses that are visible and active
+            // Only include courses that are visible and active or archived.
             if (!$course->visibility || !in_array($course->status, ['active', 'archived'])) {
                 return null;
             }

@@ -54,5 +54,8 @@ class AssignmentSubmissionSeeder extends Seeder
         ];
 
         DB::table('assignment_submissions')->insert($rows);
+
+        // Reset PostgreSQL sequence after inserting seed data with explicit IDs
+        DB::statement("SELECT setval('assignment_submissions_id_seq', (SELECT COALESCE(MAX(id), 0) FROM assignment_submissions) + 1)");
     }
 }

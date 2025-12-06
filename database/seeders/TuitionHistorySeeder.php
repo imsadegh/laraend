@@ -68,5 +68,8 @@ class TuitionHistorySeeder extends Seeder
         ];
 
         DB::table('tuition_history')->insert($rows);
+
+        // Reset PostgreSQL sequence after inserting seed data with explicit IDs
+        DB::statement("SELECT setval('tuition_history_id_seq', (SELECT COALESCE(MAX(id), 0) FROM tuition_history) + 1)");
     }
 }
