@@ -197,17 +197,19 @@ class CourseController extends Controller
             ->where('user_id', auth()->id())
             ->get();
 
-        // Map enrollments to extract course details
-        // $courses = $enrollments->map(function ($enrollment) {
-        //     return $enrollment->course;
-        // });
-
         // Map each enrollment to include its status and a flag to allow redirection only if enrolled.
+        // Also filter by course visibility and status - only show active and visible courses
         $courses = $enrollments->map(function ($enrollment) {
             $course = $enrollment->course;
             if (!$course) {
                 return null;
             }
+
+            // Only include courses that are visible and active
+            if (!$course->visibility || !in_array($course->status, ['active', 'archived'])) {
+                return null;
+            }
+
             // Attach enrollment status and a redirection flag to the course object.
             $course->enrollment_status = $enrollment->status ?? 'pending';
             $course->can_redirect = ($course->enrollment_status === 'enrolled');
@@ -269,5 +271,67 @@ class CourseController extends Controller
             ->get();
 
         return response()->json($instructors, 200);
+    }
+
+    /**
+     * Get all courses (Admin only)
+     * Used by admin dashboard to view all courses from all instructors
+     * Supports search and status filtering
+     */
+    public function getAllCourses(Request $request)
+    {
+        // Check if user is admin
+        if (!auth()->check() || auth()->user()->role->name !== 'admin') {
+            return response()->json(['message' => 'Unauthorized. Only admins can view all courses.'], 403);
+        }
+
+        $query = Course::with('instructor:id,first_name,last_name')
+            ->withCount('enrollments');
+
+        // Search by course name or course code
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('course_name', 'like', "%{$search}%")
+                  ->orWhere('course_code', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        // Sort by created date descending (newest first)
+        $courseModels = $query->orderBy('created_at', 'desc')->get();
+
+        $courses = $courseModels->map(function ($course) {
+            return [
+                'id' => $course->id,
+                'course_name' => $course->course_name,
+                'course_code' => $course->course_code,
+                'instructor_id' => $course->instructor_id,
+                'instructor' => $course->instructor ? [
+                    'id' => $course->instructor->id,
+                    'first_name' => $course->instructor->first_name,
+                    'last_name' => $course->instructor->last_name,
+                ] : null,
+                'status' => $course->status,
+                'visibility' => $course->visibility,
+                'description' => $course->description,
+                'about' => $course->about,
+                'discussion_group_url' => $course->discussion_group_url,
+                'thumbnail_url' => $course->thumbnail_url,
+                'start_date' => $course->start_date,
+                'end_date' => $course->end_date,
+                'enrollments_count' => $course->enrollments_count,
+                'created_at' => $course->created_at,
+            ];
+        });
+
+        return response()->json([
+            'data' => $courses,
+            'total' => $courseModels->count(),
+        ], 200);
     }
 }

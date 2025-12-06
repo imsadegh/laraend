@@ -39,6 +39,7 @@ Route::post('/otp/verify', [OTPVerificationController::class, 'verifyOTP']);
 Route::middleware('auth:api')->group(function () {
     Route::post('/courses', [CourseController::class, 'store']);
     Route::get('/courses', [CourseController::class, 'index']);
+    Route::get('/admin/courses', [CourseController::class, 'getAllCourses']); // Admin endpoint to view all courses
     Route::put('/courses/{course}', [CourseController::class, 'update']);
     Route::get('/courses/{course}', [CourseController::class, 'show']); // get info of course for editting(admin and instructor). get info of course for viewing(student)
     Route::get('/instructor/courses', [CourseController::class, 'getInstructorCourses']);
